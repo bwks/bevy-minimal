@@ -9,14 +9,17 @@ use leafwing_input_manager::InputManagerBundle;
 
 use crate::player::actions::Action;
 use crate::player::bundles::PlayerBundle;
-use crate::player::components::Player;
+use crate::player::components::{Fireball, Playable, Player};
 use crate::player::{
     PLAYER_FIREBALL_SCALE, PLAYER_FIREBALL_SIZE, PLAYER_FIREBALL_SPRITE, PLAYER_SCALE, PLAYER_SIZE,
     PLAYER_SPEED, PLAYER_SPRITE,
 };
 
-use crate::{Enemy, Fireball, Movable, Playable, Score, Velocity};
-use crate::{BASE_SPEED, ENEMY_SIZE, TIME_STEP};
+use crate::enemy::components::Enemy;
+use crate::enemy::ENEMY_SIZE;
+
+use crate::{Movable, Score, Velocity};
+use crate::{BASE_SPEED, TIME_STEP};
 
 pub fn player_spawn_system(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
