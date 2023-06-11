@@ -20,8 +20,8 @@ use crate::enemy::ENEMY_SIZE;
 
 use crate::score::resources::Score;
 
-use crate::{Movable, Velocity};
-use crate::{BASE_SPEED, TIME_STEP};
+use crate::common::components::{Movable, Velocity};
+use crate::common::{BASE_SPEED, TIME_STEP};
 
 pub fn player_spawn_system(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((

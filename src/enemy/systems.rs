@@ -12,8 +12,8 @@ use crate::player::PLAYER_SIZE;
 
 use crate::score::resources::Score;
 
-use crate::{Movable, Velocity};
-use crate::{BASE_SPEED, TIME_STEP};
+use crate::common::components::{Movable, Velocity};
+use crate::common::{BASE_SPEED, TIME_STEP};
 
 pub fn enemy_spawn_system(
     mut commands: Commands,
