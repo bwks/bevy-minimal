@@ -2,7 +2,7 @@ use leafwing_input_manager::orientation::Direction;
 use leafwing_input_manager::Actionlike;
 
 #[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug)]
-pub enum Action {
+pub enum ControlAction {
     Up,
     Down,
     Left,
@@ -11,7 +11,7 @@ pub enum Action {
     Fire,
 }
 
-impl Action {
+impl ControlAction {
     // Lists like this can be very useful for quickly matching subsets of actions
     pub const PLAYER_MOVE_KEYS: [Self; 5] = [
         Self::Left,

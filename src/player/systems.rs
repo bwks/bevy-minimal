@@ -7,7 +7,7 @@ use bevy::window::PrimaryWindow;
 use leafwing_input_manager::prelude::ActionState;
 use leafwing_input_manager::InputManagerBundle;
 
-use crate::player::actions::Action;
+use crate::player::actions::ControlAction;
 use crate::player::bundles::PlayerBundle;
 use crate::player::components::{Fireball, Playable, Player};
 use crate::player::{
@@ -46,12 +46,12 @@ pub fn player_fire_system(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     player_query: Query<&Transform, With<Player>>,
-    player_fire_query: Query<&ActionState<Action>, With<Player>>,
+    player_fire_query: Query<&ActionState<ControlAction>, With<Player>>,
 ) {
     if let Ok(player_tf) = player_query.get_single() {
-        let payer_fire_action = player_fire_query.single();
+        let player_fire_action = player_fire_query.single();
 
-        if payer_fire_action.just_pressed(Action::Fire) {
+        if player_fire_action.just_pressed(ControlAction::Fire) {
             let (player_x, player_y) = (player_tf.translation.x, player_tf.translation.y);
             let x_offset = PLAYER_SIZE.0 / 2.0 * PLAYER_SCALE + 10.0;
 
@@ -75,25 +75,25 @@ pub fn player_fire_system(
 
 pub fn player_movement_system(
     mut player_query: Query<&mut Transform, With<Player>>,
-    player_move_query: Query<&ActionState<Action>, With<Player>>,
+    player_move_query: Query<&ActionState<ControlAction>, With<Player>>,
     time: Res<Time>,
 ) {
     for player_move_action in player_move_query.iter() {
         if let Ok(mut transform) = player_query.get_single_mut() {
             let mut direction = Vec3::ZERO;
 
-            for input_direction in Action::PLAYER_MOVE_KEYS {
+            for input_direction in ControlAction::PLAYER_MOVE_KEYS {
                 if player_move_action.pressed(input_direction) {
                     match input_direction {
-                        Action::Up => direction += Vec3::new(0.0, 1.0, 0.0),
-                        Action::Down => direction += Vec3::new(0.0, -1.0, 0.0),
-                        Action::Left => direction += Vec3::new(-1.0, 0.0, 0.0),
-                        Action::Right => direction += Vec3::new(1.0, 0.0, 0.0),
-                        Action::AxisMove => {
+                        ControlAction::Up => direction += Vec3::new(0.0, 1.0, 0.0),
+                        ControlAction::Down => direction += Vec3::new(0.0, -1.0, 0.0),
+                        ControlAction::Left => direction += Vec3::new(-1.0, 0.0, 0.0),
+                        ControlAction::Right => direction += Vec3::new(1.0, 0.0, 0.0),
+                        ControlAction::AxisMove => {
                             // Each action has a button-like state of its own that you can check
                             // We're working with gamepads, so we want to defensively ensure that we're using the clamped values
                             if let Some(axis_pair) =
-                                player_move_action.clamped_axis_pair(Action::AxisMove)
+                                player_move_action.clamped_axis_pair(ControlAction::AxisMove)
                             {
                                 match axis_pair.x() > 0.0 {
                                     true => direction += Vec3::new(1.0, 0.0, 0.0), // move right

@@ -6,7 +6,7 @@ pub mod systems;
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::InputManagerPlugin;
 
-use crate::player::actions::Action;
+use crate::player::actions::ControlAction;
 use crate::player::systems::{
     fireball_movement_system, player_confinement_system, player_fire_system,
     player_fireball_hit_enemy_system, player_movement_system, player_spawn_system,
@@ -25,7 +25,7 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(InputManagerPlugin::<Action>::default())
+        app.add_plugin(InputManagerPlugin::<ControlAction>::default())
             .add_startup_system(player_spawn_system)
             .add_system(player_movement_system)
             .add_system(player_confinement_system)
