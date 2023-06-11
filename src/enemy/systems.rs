@@ -10,7 +10,9 @@ use crate::enemy::{ENEMY_SCALE, ENEMY_SIZE, ENEMY_SPRITE, NUMBER_OF_ENEMIES};
 use crate::player::components::{Playable, Player};
 use crate::player::PLAYER_SIZE;
 
-use crate::{Movable, Score, Velocity};
+use crate::score::resources::Score;
+
+use crate::{Movable, Velocity};
 use crate::{BASE_SPEED, TIME_STEP};
 
 pub fn enemy_spawn_system(

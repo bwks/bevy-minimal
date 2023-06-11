@@ -18,7 +18,9 @@ use crate::player::{
 use crate::enemy::components::Enemy;
 use crate::enemy::ENEMY_SIZE;
 
-use crate::{Movable, Score, Velocity};
+use crate::score::resources::Score;
+
+use crate::{Movable, Velocity};
 use crate::{BASE_SPEED, TIME_STEP};
 
 pub fn player_spawn_system(mut commands: Commands, asset_server: Res<AssetServer>) {
