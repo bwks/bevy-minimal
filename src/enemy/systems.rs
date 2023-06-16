@@ -1,24 +1,69 @@
 use rand::Rng;
 
-use bevy::prelude::*;
-use bevy::window::PrimaryWindow;
-
 use crate::enemy::components::Enemy;
 use crate::enemy::resources::EnemySpawnTimer;
-use crate::enemy::{ENEMY_SCALE, ENEMY_SIZE, ENEMY_SPRITE, NUMBER_OF_ENEMIES};
+use crate::enemy::{
+    ENEMY_SCALE, ENEMY_SIZE, ENEMY_SPRITE_1, ENEMY_SPRITE_2, ENEMY_SPRITE_3, NUMBER_OF_ENEMIES,
+};
+use bevy::prelude::*;
+use bevy::window::PrimaryWindow;
 
 use crate::player::components::{Playable, Player};
 use crate::player::PLAYER_SIZE;
 
 use crate::score::resources::Score;
 
-use crate::common::components::{Movable, Velocity};
+use crate::common::components::{AnimationIndices, AnimationTimer, Movable, Velocity};
 use crate::common::{BASE_SPEED, TIME_STEP};
+
+// pub fn enemy_spawn_system(
+//     mut commands: Commands,
+//     window_query: Query<&Window, With<PrimaryWindow>>,
+//     asset_server: Res<AssetServer>,
+// ) {
+//     let window = window_query.get_single().unwrap();
+
+//     let (spawn_area_width_start, spawn_area_width_end) =
+//         (window.width() / 2.0, window.width() - window.width() / 8.0);
+//     let (spawn_area_height_start, spawn_area_height_end) =
+//         (-window.height() / 2.0 + 50.0, window.height() / 2.0 - 50.0);
+
+//     // println!("spawn_area_width_start: {}", spawn_area_width_start);
+//     // println!("spawn_area_width_end: {}", spawn_area_width_end);
+
+//     for _ in 0..NUMBER_OF_ENEMIES {
+//         let mut rng = rand::thread_rng();
+//         let random_width = rng.gen_range(spawn_area_width_start..spawn_area_width_end);
+//         let random_height = rng.gen_range(spawn_area_height_start..spawn_area_height_end);
+//         // println!("window_width {}", window.width());
+//         // println!("window_height {}", window.height());
+//         // println!("random_width {random_width}");
+//         // println!("random_height {random_height}");
+//         commands.spawn((
+//             SpriteBundle {
+//                 texture: asset_server.load(ENEMY_SPRITE),
+//                 transform: Transform {
+//                     translation: Vec3::new(random_width, random_height, 10.0),
+//                     scale: Vec3::new(ENEMY_SCALE, ENEMY_SCALE, 1.0),
+//                     ..Default::default()
+//                 },
+//                 ..Default::default()
+//             },
+//             Enemy {},
+//             Movable { auto_despawn: true },
+//             Velocity {
+//                 x: rng.gen_range(0.01..0.1),
+//                 y: rng.gen_range(0.01..0.1),
+//             },
+//         ));
+//     }
+// }
 
 pub fn enemy_spawn_system(
     mut commands: Commands,
     window_query: Query<&Window, With<PrimaryWindow>>,
     asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
     let window = window_query.get_single().unwrap();
 
@@ -30,24 +75,41 @@ pub fn enemy_spawn_system(
     // println!("spawn_area_width_start: {}", spawn_area_width_start);
     // println!("spawn_area_width_end: {}", spawn_area_width_end);
 
+    let enemy_sprites = [ENEMY_SPRITE_1, ENEMY_SPRITE_2, ENEMY_SPRITE_3];
+
     for _ in 0..NUMBER_OF_ENEMIES {
         let mut rng = rand::thread_rng();
+
+        let random_enemy_index = rng.gen_range(0..=2);
+
+        let texture_handle = asset_server.load(enemy_sprites[random_enemy_index]);
+        let texture_atlas =
+            // TextureAtlas::from_grid(texture_handle, Vec2::new(64.0, 64.0), 7, 1, None, None);
+            TextureAtlas::from_grid(texture_handle, Vec2::new(96.0, 96.0), 8, 1, None, None);
+        let texture_atlas_handle = texture_atlases.add(texture_atlas);
+        // Use only the subset of sprites in the sheet that make up the run animation
+        let animation_indices = AnimationIndices { first: 0, last: 6 };
+
+        let animation_timer = Timer::from_seconds(10.0, TimerMode::Repeating);
+
         let random_width = rng.gen_range(spawn_area_width_start..spawn_area_width_end);
         let random_height = rng.gen_range(spawn_area_height_start..spawn_area_height_end);
-        // println!("window_width {}", window.width());
-        // println!("window_height {}", window.height());
-        // println!("random_width {random_width}");
-        // println!("random_height {random_height}");
+
         commands.spawn((
-            SpriteBundle {
-                texture: asset_server.load(ENEMY_SPRITE),
+            SpriteSheetBundle {
+                texture_atlas: texture_atlas_handle.clone(),
+                sprite: TextureAtlasSprite::new(animation_indices.first),
+                // transform: Transform::from_scale(Vec3::splat(3.0)),
                 transform: Transform {
-                    translation: Vec3::new(random_width, random_height, 0.0),
-                    scale: Vec3::new(ENEMY_SCALE, ENEMY_SCALE, 1.0),
+                    translation: Vec3::new(random_width, random_height, 10.0),
+                    rotation: Quat::from_rotation_y(std::f32::consts::PI),
+                    scale: Vec3::splat(1.5),
                     ..Default::default()
                 },
                 ..Default::default()
             },
+            animation_indices,
+            AnimationTimer(animation_timer.clone()),
             Enemy {},
             Movable { auto_despawn: true },
             Velocity {
@@ -70,9 +132,10 @@ pub fn enemies_spawn_over_time_system(
     window_query: Query<&Window, With<PrimaryWindow>>,
     asset_server: Res<AssetServer>,
     enemy_spawn_timer: Res<EnemySpawnTimer>,
+    texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
     if enemy_spawn_timer.timer.finished() {
-        enemy_spawn_system(commands, window_query, asset_server)
+        enemy_spawn_system(commands, window_query, asset_server, texture_atlases)
     }
 }
 
@@ -81,6 +144,16 @@ pub fn enemy_movement_system(
     mut enemy_query: Query<(Entity, &Velocity, &mut Transform, &Movable), With<Enemy>>,
     player_query: Query<(&Transform, &Playable), Without<Enemy>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
+    mut score: ResMut<Score>,
+    mut enemy_animate_query: Query<
+        (
+            &AnimationIndices,
+            &mut AnimationTimer,
+            &mut TextureAtlasSprite,
+        ),
+        With<Enemy>,
+    >,
+    time: Res<Time>,
 ) {
     let window = window_query.get_single().unwrap();
 
@@ -100,12 +173,24 @@ pub fn enemy_movement_system(
                     false => enemy_translation.y -= velocity.y * TIME_STEP * BASE_SPEED / 2.0,
                 }
             }
-
+            for (indices, mut timer, mut sprite) in &mut enemy_animate_query {
+                timer.tick(time.delta());
+                if timer.just_finished() {
+                    sprite.index = if sprite.index == indices.last {
+                        indices.first
+                    } else {
+                        sprite.index + 1
+                    };
+                }
+            }
             if movable.auto_despawn {
                 // despawn when out of screen
                 let window_margin = -window.width() / 2.0 - 20.0;
                 if enemy_translation.x < window_margin {
                     commands.entity(enemy_entity).despawn();
+                    if score.value > 0 {
+                        score.value -= 1;
+                    }
                 }
             }
         }

@@ -7,6 +7,7 @@ use bevy::window::PrimaryWindow;
 use leafwing_input_manager::prelude::ActionState;
 use leafwing_input_manager::InputManagerBundle;
 
+use crate::common::components::{AnimationIndices, AnimationTimer};
 use crate::player::actions::ControlAction;
 use crate::player::bundles::PlayerBundle;
 use crate::player::components::{Fireball, Playable, Player};
@@ -23,7 +24,22 @@ use crate::score::resources::Score;
 use crate::common::components::{Movable, Velocity};
 use crate::common::{BASE_SPEED, TIME_STEP};
 
-pub fn player_spawn_system(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn player_spawn_system(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+) {
+    let window = window_query.get_single().unwrap();
+
+    // let texture_handle = asset_server.load("campfire_48x48.png");
+    let texture_handle = asset_server.load(PLAYER_SPRITE);
+    let texture_atlas =
+        TextureAtlas::from_grid(texture_handle, Vec2::new(24.0, 24.0), 7, 1, None, None);
+    let texture_atlas_handle = texture_atlases.add(texture_atlas);
+    // Use only the subset of sprites in the sheet that make up the run animation
+    let animation_indices = AnimationIndices { first: 1, last: 6 };
+
     commands.spawn((
         PlayerBundle {
             player: Player,
@@ -32,14 +48,19 @@ pub fn player_spawn_system(mut commands: Commands, asset_server: Res<AssetServer
                 ..default()
             },
         },
-        SpriteBundle {
-            texture: asset_server.load(PLAYER_SPRITE),
+        SpriteSheetBundle {
+            texture_atlas: texture_atlas_handle,
+            sprite: TextureAtlasSprite::new(animation_indices.first),
+            // transform: Transform::from_scale(Vec3::splat(3.0)),
             transform: Transform {
-                scale: Vec3::new(PLAYER_SCALE, PLAYER_SCALE, 1.0),
+                translation: Vec3::new(-window.width() / 4.0, 0.0, 10.0),
+                scale: Vec3::splat(3.0),
                 ..Default::default()
             },
             ..Default::default()
         },
+        animation_indices,
+        AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
         Playable {},
     ));
 }
@@ -78,6 +99,14 @@ pub fn player_fire_system(
 pub fn player_movement_system(
     mut player_query: Query<&mut Transform, With<Player>>,
     player_move_query: Query<&ActionState<ControlAction>, With<Player>>,
+    mut player_animate_query: Query<
+        (
+            &AnimationIndices,
+            &mut AnimationTimer,
+            &mut TextureAtlasSprite,
+        ),
+        With<Player>,
+    >,
     time: Res<Time>,
 ) {
     for player_move_action in player_move_query.iter() {
@@ -115,6 +144,20 @@ pub fn player_movement_system(
 
             if direction.length() > 0.0 {
                 direction = direction.normalize();
+                for (indices, mut timer, mut sprite) in &mut player_animate_query {
+                    timer.tick(time.delta());
+                    if timer.just_finished() {
+                        sprite.index = if sprite.index == indices.last {
+                            indices.first
+                        } else {
+                            sprite.index + 1
+                        };
+                    }
+                }
+            } else {
+                if let Ok((_, _, mut sprite)) = player_animate_query.get_single_mut() {
+                    sprite.index = 0;
+                }
             }
 
             transform.translation += direction * PLAYER_SPEED * time.delta_seconds();

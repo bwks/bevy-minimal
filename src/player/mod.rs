@@ -13,7 +13,7 @@ use crate::player::systems::{
 };
 
 pub const PLAYER_SPEED: f32 = 500.0;
-pub const PLAYER_SPRITE: &str = "purplecloakwizard.png";
+pub const PLAYER_SPRITE: &str = "gabe-idle-run.png";
 pub const PLAYER_SIZE: (f32, f32) = (17.0, 30.0); // (x, y)
 pub const PLAYER_SCALE: f32 = 2.0;
 pub const PLAYER_FIRE_KEY: KeyCode = KeyCode::J;
@@ -27,6 +27,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(InputManagerPlugin::<ControlAction>::default())
             .add_startup_system(player_spawn_system)
+            // .add_system(animate_sprite)
             .add_system(player_movement_system)
             .add_system(player_confinement_system)
             .add_system(player_fire_system)

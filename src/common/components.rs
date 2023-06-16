@@ -1,4 +1,5 @@
-use bevy::prelude::Component;
+use bevy::prelude::{Component, Deref, DerefMut};
+use bevy::time::Timer;
 
 #[derive(Component)]
 pub struct Velocity {
@@ -10,3 +11,12 @@ pub struct Velocity {
 pub struct Movable {
     pub auto_despawn: bool,
 }
+
+#[derive(Component, Clone, Copy)]
+pub struct AnimationIndices {
+    pub first: usize,
+    pub last: usize,
+}
+
+#[derive(Component, Deref, DerefMut)]
+pub struct AnimationTimer(pub Timer);
