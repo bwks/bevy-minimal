@@ -2,9 +2,8 @@ use rand::Rng;
 
 use crate::enemy::components::Enemy;
 use crate::enemy::resources::EnemySpawnTimer;
-use crate::enemy::{
-    ENEMY_SCALE, ENEMY_SIZE, ENEMY_SPRITE_1, ENEMY_SPRITE_2, ENEMY_SPRITE_3, NUMBER_OF_ENEMIES,
-};
+use crate::enemy::{ENEMY_SIZE, ENEMY_SPRITE_1, NUMBER_OF_ENEMIES};
+use crate::game::states::GameState;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
@@ -15,49 +14,6 @@ use crate::score::resources::Score;
 
 use crate::common::components::{AnimationIndices, AnimationTimer, Movable, Velocity};
 use crate::common::{BASE_SPEED, TIME_STEP};
-
-// pub fn enemy_spawn_system(
-//     mut commands: Commands,
-//     window_query: Query<&Window, With<PrimaryWindow>>,
-//     asset_server: Res<AssetServer>,
-// ) {
-//     let window = window_query.get_single().unwrap();
-
-//     let (spawn_area_width_start, spawn_area_width_end) =
-//         (window.width() / 2.0, window.width() - window.width() / 8.0);
-//     let (spawn_area_height_start, spawn_area_height_end) =
-//         (-window.height() / 2.0 + 50.0, window.height() / 2.0 - 50.0);
-
-//     // println!("spawn_area_width_start: {}", spawn_area_width_start);
-//     // println!("spawn_area_width_end: {}", spawn_area_width_end);
-
-//     for _ in 0..NUMBER_OF_ENEMIES {
-//         let mut rng = rand::thread_rng();
-//         let random_width = rng.gen_range(spawn_area_width_start..spawn_area_width_end);
-//         let random_height = rng.gen_range(spawn_area_height_start..spawn_area_height_end);
-//         // println!("window_width {}", window.width());
-//         // println!("window_height {}", window.height());
-//         // println!("random_width {random_width}");
-//         // println!("random_height {random_height}");
-//         commands.spawn((
-//             SpriteBundle {
-//                 texture: asset_server.load(ENEMY_SPRITE),
-//                 transform: Transform {
-//                     translation: Vec3::new(random_width, random_height, 10.0),
-//                     scale: Vec3::new(ENEMY_SCALE, ENEMY_SCALE, 1.0),
-//                     ..Default::default()
-//                 },
-//                 ..Default::default()
-//             },
-//             Enemy {},
-//             Movable { auto_despawn: true },
-//             Velocity {
-//                 x: rng.gen_range(0.01..0.1),
-//                 y: rng.gen_range(0.01..0.1),
-//             },
-//         ));
-//     }
-// }
 
 pub fn enemy_spawn_system(
     mut commands: Commands,
@@ -72,23 +28,24 @@ pub fn enemy_spawn_system(
     let (spawn_area_height_start, spawn_area_height_end) =
         (-window.height() / 2.0 + 50.0, window.height() / 2.0 - 50.0);
 
-    // println!("spawn_area_width_start: {}", spawn_area_width_start);
-    // println!("spawn_area_width_end: {}", spawn_area_width_end);
-
-    let enemy_sprites = [ENEMY_SPRITE_1, ENEMY_SPRITE_2, ENEMY_SPRITE_3];
-
     for _ in 0..NUMBER_OF_ENEMIES {
         let mut rng = rand::thread_rng();
 
-        let random_enemy_index = rng.gen_range(0..=2);
-
-        let texture_handle = asset_server.load(enemy_sprites[random_enemy_index]);
-        let texture_atlas =
-            // TextureAtlas::from_grid(texture_handle, Vec2::new(64.0, 64.0), 7, 1, None, None);
-            TextureAtlas::from_grid(texture_handle, Vec2::new(96.0, 96.0), 8, 1, None, None);
+        let texture_handle = asset_server.load(ENEMY_SPRITE_1.file);
+        let texture_atlas = TextureAtlas::from_grid(
+            texture_handle,
+            Vec2::new(ENEMY_SPRITE_1.width, ENEMY_SPRITE_1.height),
+            ENEMY_SPRITE_1.columns,
+            ENEMY_SPRITE_1.rows,
+            None,
+            None,
+        );
         let texture_atlas_handle = texture_atlases.add(texture_atlas);
         // Use only the subset of sprites in the sheet that make up the run animation
-        let animation_indices = AnimationIndices { first: 0, last: 6 };
+        let animation_indices = AnimationIndices {
+            first: 33,
+            last: 42,
+        };
 
         let animation_timer = Timer::from_seconds(10.0, TimerMode::Repeating);
 
@@ -102,8 +59,8 @@ pub fn enemy_spawn_system(
                 // transform: Transform::from_scale(Vec3::splat(3.0)),
                 transform: Transform {
                     translation: Vec3::new(random_width, random_height, 10.0),
-                    rotation: Quat::from_rotation_y(std::f32::consts::PI),
-                    scale: Vec3::splat(1.5),
+                    // rotation: Quat::from_rotation_y(std::f32::consts::PI),
+                    scale: Vec3::splat(ENEMY_SPRITE_1.scale),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -117,6 +74,18 @@ pub fn enemy_spawn_system(
                 y: rng.gen_range(0.01..0.1),
             },
         ));
+    }
+}
+
+pub fn respawn_enemy_system(
+    commands: Commands,
+    keyboard_input: Res<Input<KeyCode>>,
+    asset_server: Res<AssetServer>,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+    texture_atlases: ResMut<Assets<TextureAtlas>>,
+) {
+    if keyboard_input.just_pressed(KeyCode::F1) {
+        enemy_spawn_system(commands, window_query, asset_server, texture_atlases)
     }
 }
 
@@ -204,7 +173,6 @@ pub fn enemy_hit_player_system(
     score: Res<Score>,
 ) {
     if let Ok((player_entity, player_transform)) = player_query.get_single() {
-        // println!("player_entity: {}", player_entity.index());
         for enemy_transform in enemy_query.iter() {
             let distance = player_transform
                 .translation
@@ -212,7 +180,7 @@ pub fn enemy_hit_player_system(
             let player_radius = PLAYER_SIZE.0 / 2.0;
             let enemy_radius = ENEMY_SIZE.0 / 2.0;
             if distance < player_radius + enemy_radius {
-                // println!("Enemy hit player! Game Over!");
+                commands.insert_resource(NextState(Some(GameState::Paused)));
                 commands.entity(player_entity).despawn();
                 println!("Final Score: {}", score.value);
             }

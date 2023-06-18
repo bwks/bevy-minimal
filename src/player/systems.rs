@@ -32,13 +32,18 @@ pub fn player_spawn_system(
 ) {
     let window = window_query.get_single().unwrap();
 
-    // let texture_handle = asset_server.load("campfire_48x48.png");
-    let texture_handle = asset_server.load(PLAYER_SPRITE);
-    let texture_atlas =
-        TextureAtlas::from_grid(texture_handle, Vec2::new(24.0, 24.0), 7, 1, None, None);
+    let texture_handle = asset_server.load(PLAYER_SPRITE.file);
+    let texture_atlas = TextureAtlas::from_grid(
+        texture_handle,
+        Vec2::new(PLAYER_SPRITE.width, PLAYER_SPRITE.height),
+        PLAYER_SPRITE.columns,
+        PLAYER_SPRITE.rows,
+        None,
+        None,
+    );
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
     // Use only the subset of sprites in the sheet that make up the run animation
-    let animation_indices = AnimationIndices { first: 1, last: 6 };
+    let animation_indices = AnimationIndices { first: 8, last: 11 };
 
     commands.spawn((
         PlayerBundle {
@@ -51,10 +56,9 @@ pub fn player_spawn_system(
         SpriteSheetBundle {
             texture_atlas: texture_atlas_handle,
             sprite: TextureAtlasSprite::new(animation_indices.first),
-            // transform: Transform::from_scale(Vec3::splat(3.0)),
             transform: Transform {
                 translation: Vec3::new(-window.width() / 4.0, 0.0, 10.0),
-                scale: Vec3::splat(3.0),
+                scale: Vec3::splat(PLAYER_SPRITE.scale),
                 ..Default::default()
             },
             ..Default::default()
@@ -63,6 +67,21 @@ pub fn player_spawn_system(
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
         Playable {},
     ));
+}
+
+pub fn respawn_player_system(
+    commands: Commands,
+    player_query: Query<Entity, With<Player>>,
+    keyboard_input: Res<Input<KeyCode>>,
+    asset_server: Res<AssetServer>,
+    texture_atlases: ResMut<Assets<TextureAtlas>>,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+) {
+    if keyboard_input.just_pressed(KeyCode::F1) {
+        if !player_query.get_single().is_ok() {
+            player_spawn_system(commands, asset_server, texture_atlases, window_query);
+        }
+    }
 }
 
 pub fn player_fire_system(
@@ -147,11 +166,12 @@ pub fn player_movement_system(
                 for (indices, mut timer, mut sprite) in &mut player_animate_query {
                     timer.tick(time.delta());
                     if timer.just_finished() {
-                        sprite.index = if sprite.index == indices.last {
-                            indices.first
-                        } else {
-                            sprite.index + 1
-                        };
+                        sprite.index =
+                            if sprite.index < indices.first || sprite.index == indices.last {
+                                8
+                            } else {
+                                sprite.index + 1
+                            };
                     }
                 }
             } else {
