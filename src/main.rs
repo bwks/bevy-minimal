@@ -18,14 +18,13 @@ use world::WorldPlugin;
 
 fn main() {
     App::new()
-        // .insert_resource(ClearColor(Color::rgb_u8(120, 200, 102)))
         .insert_resource(ClearColor(Color::rgb_u8(85, 128, 0)))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 mode: WindowMode::BorderlessFullscreen,
                 ..Default::default()
             }),
-            ..default()
+            ..Default::default()
         }))
         .add_plugin(GamePlugin)
         .add_plugin(WorldPlugin)
