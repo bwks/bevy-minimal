@@ -47,14 +47,14 @@ pub fn player_spawn_system(
 
     commands.spawn((
         PlayerBundle {
-            player: Player,
+            player: Player::One,
             input_manager: InputManagerBundle {
-                input_map: PlayerBundle::default_input_map(),
+                input_map: PlayerBundle::default_input_map(Player::One),
                 ..default()
             },
         },
         SpriteSheetBundle {
-            texture_atlas: texture_atlas_handle,
+            texture_atlas: texture_atlas_handle.clone(),
             sprite: TextureAtlasSprite::new(animation_indices.first),
             transform: Transform {
                 translation: Vec3::new(-window.width() / 4.0, 0.0, 10.0),
@@ -67,6 +67,29 @@ pub fn player_spawn_system(
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
         Playable {},
     ));
+
+    // commands.spawn((
+    //     PlayerBundle {
+    //         player: Player::Two,
+    //         input_manager: InputManagerBundle {
+    //             input_map: PlayerBundle::default_input_map(Player::Two),
+    //             ..default()
+    //         },
+    //     },
+    //     SpriteSheetBundle {
+    //         texture_atlas: texture_atlas_handle.clone(),
+    //         sprite: TextureAtlasSprite::new(animation_indices.first),
+    //         transform: Transform {
+    //             translation: Vec3::new(-window.width() / 4.0 + 50.0, 10.0, 10.0),
+    //             scale: Vec3::splat(PLAYER_SPRITE.scale),
+    //             ..Default::default()
+    //         },
+    //         ..Default::default()
+    //     },
+    //     animation_indices,
+    //     AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+    //     Playable {},
+    // ));
 }
 
 pub fn respawn_player_system(
@@ -90,7 +113,8 @@ pub fn player_fire_system(
     player_query: Query<&Transform, With<Player>>,
     player_fire_query: Query<&ActionState<ControlAction>, With<Player>>,
 ) {
-    if let Ok(player_tf) = player_query.get_single() {
+    // if let Ok(player_tf) = player_query.get_single() {
+    for player_tf in player_query.iter() {
         let player_fire_action = player_fire_query.single();
 
         if player_fire_action.just_pressed(ControlAction::Fire) {
@@ -128,8 +152,10 @@ pub fn player_movement_system(
     >,
     time: Res<Time>,
 ) {
-    for player_move_action in player_move_query.iter() {
-        if let Ok(mut transform) = player_query.get_single_mut() {
+    // for player_move_action in player_move_query.iter() {
+    // if let Ok(mut transform) = player_query.get_single_mut() {
+    for mut player_transform in player_query.iter_mut() {
+        for player_move_action in player_move_query.iter() {
             let mut direction = Vec3::ZERO;
 
             for input_direction in ControlAction::PLAYER_MOVE_KEYS {
@@ -180,7 +206,7 @@ pub fn player_movement_system(
                 }
             }
 
-            transform.translation += direction * PLAYER_SPEED * time.delta_seconds();
+            player_transform.translation += direction * PLAYER_SPEED * time.delta_seconds();
         }
     }
 }
@@ -189,7 +215,8 @@ pub fn player_confinement_system(
     mut player_query: Query<&mut Transform, With<Player>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
-    if let Ok(mut player_transform) = player_query.get_single_mut() {
+    // if let Ok(mut player_transform) = player_query.get_single_mut() {
+    for mut player_transform in player_query.iter_mut() {
         let window = window_query.get_single().unwrap();
 
         let x_min = -window.width() / 2.0 + PLAYER_SIZE.0 + 5.0;
@@ -198,8 +225,6 @@ pub fn player_confinement_system(
         let y_max = window.height() / 2.0 - PLAYER_SIZE.1 - 5.0;
 
         let mut translation = player_transform.translation;
-
-        // println!("player_position: {}", translation);
 
         // Bound the player x position
         if translation.x < x_min {

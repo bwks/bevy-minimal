@@ -15,34 +15,40 @@ pub struct PlayerBundle {
 }
 
 impl PlayerBundle {
-    pub fn default_input_map() -> InputMap<ControlAction> {
-        // This allows us to replace `Action::Up` with `Up`,
-        // significantly reducing boilerplate
-        let mut input_map = InputMap::default();
+    pub fn default_input_map(player: Player) -> InputMap<ControlAction> {
+        let mut input_map = match player {
+            Player::One => InputMap::new([
+                (KeyCode::W, ControlAction::Up),
+                (KeyCode::S, ControlAction::Down),
+                (KeyCode::A, ControlAction::Left),
+                (KeyCode::D, ControlAction::Right),
+                (KeyCode::B, ControlAction::Fire),
+            ])
+            .set_gamepad(Gamepad { id: 0 })
+            .build(),
+            Player::Two => InputMap::new([
+                (KeyCode::Up, ControlAction::Up),
+                (KeyCode::Down, ControlAction::Down),
+                (KeyCode::Left, ControlAction::Left),
+                (KeyCode::Right, ControlAction::Right),
+                (KeyCode::J, ControlAction::Fire),
+            ])
+            .set_gamepad(Gamepad { id: 1 })
+            .build(),
+        };
 
-        // Axis joystick
         input_map.insert(DualAxis::left_stick(), ControlAction::AxisMove);
 
-        // D-Pad
-        input_map.insert(GamepadButtonType::DPadUp, ControlAction::Up);
-        input_map.insert(GamepadButtonType::DPadDown, ControlAction::Down);
-        input_map.insert(GamepadButtonType::DPadLeft, ControlAction::Left);
-        input_map.insert(GamepadButtonType::DPadRight, ControlAction::Right);
-
-        // Keyboard
-        input_map.insert(KeyCode::Up, ControlAction::Up);
-        input_map.insert(KeyCode::W, ControlAction::Up);
-        input_map.insert(KeyCode::Down, ControlAction::Down);
-        input_map.insert(KeyCode::S, ControlAction::Down);
-        input_map.insert(KeyCode::Left, ControlAction::Left);
-        input_map.insert(KeyCode::A, ControlAction::Left);
-        input_map.insert(KeyCode::Right, ControlAction::Right);
-        input_map.insert(KeyCode::D, ControlAction::Right);
-
-        // Abilities
-        input_map.insert(KeyCode::J, ControlAction::Fire);
-        input_map.insert(GamepadButtonType::South, ControlAction::Fire);
-        input_map.insert(MouseButton::Left, ControlAction::Fire);
+        input_map.insert_multiple([
+            // (DualAxis::left_stick(), ControlAction::AxisMove),
+            (GamepadButtonType::DPadUp, ControlAction::Up),
+            (GamepadButtonType::DPadDown, ControlAction::Down),
+            (GamepadButtonType::DPadLeft, ControlAction::Left),
+            (GamepadButtonType::DPadRight, ControlAction::Right),
+            (GamepadButtonType::South, ControlAction::Fire),
+            (GamepadButtonType::Select, ControlAction::Pause),
+            (GamepadButtonType::Start, ControlAction::Restart),
+        ]);
 
         input_map
     }

@@ -9,6 +9,8 @@ pub enum ControlAction {
     Right,
     AxisMove,
     Fire,
+    Pause,
+    Restart,
 }
 
 impl ControlAction {

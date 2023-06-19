@@ -1,7 +1,10 @@
 use bevy::prelude::Component;
 
 #[derive(Component)]
-pub struct Player;
+pub enum Player {
+    One,
+    Two,
+}
 
 #[derive(Component)]
 pub struct Playable;

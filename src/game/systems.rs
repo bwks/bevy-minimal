@@ -1,10 +1,12 @@
 use bevy::app::AppExit;
 use bevy::diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
+use leafwing_input_manager::prelude::ActionState;
 
 use crate::enemy::components::Enemy;
 use crate::game::components::{ColorText, FpsText};
 use crate::game::states::GameState;
+use crate::player::actions::ControlAction;
 use crate::player::components::Player;
 use crate::score::resources::Score;
 
@@ -13,27 +15,30 @@ pub fn spawn_camera_system(mut commands: Commands) {
 }
 
 pub fn toggle_game_state_system(
+    player_query: Query<Entity, With<Player>>,
     keyboard_input: Res<Input<KeyCode>>,
+    controller_query: Query<&ActionState<ControlAction>>,
     game_state: Res<State<GameState>>,
     mut next_app_state: ResMut<NextState<GameState>>,
 ) {
-    if keyboard_input.just_pressed(KeyCode::Space) {
-        match game_state.0 {
-            GameState::Playing => {
-                next_app_state.set(GameState::Paused);
-            }
-            GameState::Paused => {
-                next_app_state.set(GameState::Playing);
+    if let Ok(_player) = player_query.get_single() {
+        let controller_input = controller_query.single();
+        if keyboard_input.just_pressed(KeyCode::Space)
+            || controller_input.just_pressed(ControlAction::Pause)
+        {
+            match game_state.0 {
+                GameState::Playing => {
+                    next_app_state.set(GameState::Paused);
+                }
+                GameState::Paused => {
+                    next_app_state.set(GameState::Playing);
+                }
             }
         }
     }
 }
 
 pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>) {
-    // UI camera
-    // commands.spawn(Camera2dBundle::default());
-    // Text with one section
-
     commands.spawn((
         // Create a TextBundle that has a Text with a single section.
         TextBundle::from_section(
@@ -130,7 +135,18 @@ pub fn restart_game_system(
     player_query: Query<Entity, With<Player>>,
     enemy_query: Query<Entity, With<Enemy>>,
     keyboard_input: Res<Input<KeyCode>>,
+    controller_query: Query<&ActionState<ControlAction>>,
 ) {
+    if let Ok(controller_input) = controller_query.get_single() {
+        if controller_input.just_pressed(ControlAction::Restart) {
+            if let Ok(player) = player_query.get_single() {
+                commands.entity(player).despawn();
+            }
+            for entity in enemy_query.iter() {
+                commands.entity(entity).despawn();
+            }
+        }
+    };
     if keyboard_input.just_pressed(KeyCode::F2) {
         for entity in player_query.iter() {
             commands.entity(entity).despawn();

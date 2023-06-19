@@ -172,7 +172,8 @@ pub fn enemy_hit_player_system(
     enemy_query: Query<&Transform, With<Enemy>>,
     score: Res<Score>,
 ) {
-    if let Ok((player_entity, player_transform)) = player_query.get_single() {
+    // if let Ok((player_entity, player_transform)) = player_query.get_single() {
+    for (player_entity, player_transform) in player_query.iter() {
         for enemy_transform in enemy_query.iter() {
             let distance = player_transform
                 .translation
