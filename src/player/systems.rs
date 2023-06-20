@@ -92,26 +92,17 @@ pub fn player_spawn_system(
     ));
 }
 
-pub fn player_respawn_system(
-    commands: Commands,
-    controller_query: Query<&ActionState<ControlAction>, With<Player>>,
+pub fn player_despawn_system(
+    mut commands: Commands,
+    player_query: Query<(Entity, &ActionState<ControlAction>), With<Player>>,
     keyboard_input: Res<Input<KeyCode>>,
-    asset_server: Res<AssetServer>,
-    texture_atlases: ResMut<Assets<TextureAtlas>>,
-    window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
-    let mut restart = false;
-
-    for controller_input in controller_query.iter() {
+    for (player_entity, controller_input) in player_query.iter() {
         if keyboard_input.just_pressed(KeyCode::F1)
             || controller_input.just_pressed(ControlAction::Restart)
         {
-            restart = true;
+            commands.entity(player_entity).despawn();
         }
-    }
-
-    if controller_query.iter().len() <= 1 && restart {
-        player_spawn_system(commands, asset_server, texture_atlases, window_query)
     }
 }
 
