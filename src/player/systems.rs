@@ -49,7 +49,7 @@ pub fn player_spawn_system(
         PlayerBundle {
             player: Player::One,
             input_manager: InputManagerBundle {
-                input_map: PlayerBundle::default_input_map(Player::One),
+                input_map: PlayerBundle::input_map(Player::One),
                 ..default()
             },
         },
@@ -68,57 +68,64 @@ pub fn player_spawn_system(
         Playable {},
     ));
 
-    // commands.spawn((
-    //     PlayerBundle {
-    //         player: Player::Two,
-    //         input_manager: InputManagerBundle {
-    //             input_map: PlayerBundle::default_input_map(Player::Two),
-    //             ..default()
-    //         },
-    //     },
-    //     SpriteSheetBundle {
-    //         texture_atlas: texture_atlas_handle.clone(),
-    //         sprite: TextureAtlasSprite::new(animation_indices.first),
-    //         transform: Transform {
-    //             translation: Vec3::new(-window.width() / 4.0 + 50.0, 10.0, 10.0),
-    //             scale: Vec3::splat(PLAYER_SPRITE.scale),
-    //             ..Default::default()
-    //         },
-    //         ..Default::default()
-    //     },
-    //     animation_indices,
-    //     AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
-    //     Playable {},
-    // ));
+    commands.spawn((
+        PlayerBundle {
+            player: Player::Two,
+            input_manager: InputManagerBundle {
+                input_map: PlayerBundle::input_map(Player::Two),
+                ..default()
+            },
+        },
+        SpriteSheetBundle {
+            texture_atlas: texture_atlas_handle.clone(),
+            sprite: TextureAtlasSprite::new(animation_indices.first),
+            transform: Transform {
+                translation: Vec3::new(-window.width() / 4.0 + 50.0, 10.0, 10.0),
+                scale: Vec3::splat(PLAYER_SPRITE.scale),
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+        animation_indices,
+        AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+        Playable {},
+    ));
 }
 
-pub fn respawn_player_system(
+pub fn player_respawn_system(
     commands: Commands,
-    player_query: Query<Entity, With<Player>>,
+    controller_query: Query<&ActionState<ControlAction>, With<Player>>,
     keyboard_input: Res<Input<KeyCode>>,
     asset_server: Res<AssetServer>,
     texture_atlases: ResMut<Assets<TextureAtlas>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
-    if keyboard_input.just_pressed(KeyCode::F1) {
-        if !player_query.get_single().is_ok() {
-            player_spawn_system(commands, asset_server, texture_atlases, window_query);
+    let mut restart = false;
+
+    for controller_input in controller_query.iter() {
+        if keyboard_input.just_pressed(KeyCode::F1)
+            || controller_input.just_pressed(ControlAction::Restart)
+        {
+            restart = true;
         }
+    }
+
+    if controller_query.iter().len() <= 1 && restart {
+        player_spawn_system(commands, asset_server, texture_atlases, window_query)
     }
 }
 
 pub fn player_fire_system(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    player_query: Query<&Transform, With<Player>>,
-    player_fire_query: Query<&ActionState<ControlAction>, With<Player>>,
+    player_query: Query<(&Transform, &ActionState<ControlAction>), With<Player>>,
 ) {
-    // if let Ok(player_tf) = player_query.get_single() {
-    for player_tf in player_query.iter() {
-        let player_fire_action = player_fire_query.single();
-
+    for (player_transform, player_fire_action) in player_query.iter() {
         if player_fire_action.just_pressed(ControlAction::Fire) {
-            let (player_x, player_y) = (player_tf.translation.x, player_tf.translation.y);
+            let (player_x, player_y) = (
+                player_transform.translation.x,
+                player_transform.translation.y,
+            );
             let x_offset = PLAYER_SIZE.0 / 2.0 * PLAYER_SCALE + 10.0;
 
             commands.spawn((
@@ -140,74 +147,67 @@ pub fn player_fire_system(
 }
 
 pub fn player_movement_system(
-    mut player_query: Query<&mut Transform, With<Player>>,
-    player_move_query: Query<&ActionState<ControlAction>, With<Player>>,
-    mut player_animate_query: Query<
+    mut player_query: Query<
         (
+            &mut Transform,
+            &ActionState<ControlAction>,
             &AnimationIndices,
             &mut AnimationTimer,
             &mut TextureAtlasSprite,
         ),
         With<Player>,
     >,
+
     time: Res<Time>,
 ) {
-    // for player_move_action in player_move_query.iter() {
-    // if let Ok(mut transform) = player_query.get_single_mut() {
-    for mut player_transform in player_query.iter_mut() {
-        for player_move_action in player_move_query.iter() {
-            let mut direction = Vec3::ZERO;
-
-            for input_direction in ControlAction::PLAYER_MOVE_KEYS {
-                if player_move_action.pressed(input_direction) {
-                    match input_direction {
-                        ControlAction::Up => direction += Vec3::new(0.0, 1.0, 0.0),
-                        ControlAction::Down => direction += Vec3::new(0.0, -1.0, 0.0),
-                        ControlAction::Left => direction += Vec3::new(-1.0, 0.0, 0.0),
-                        ControlAction::Right => direction += Vec3::new(1.0, 0.0, 0.0),
-                        ControlAction::AxisMove => {
-                            // Each action has a button-like state of its own that you can check
-                            // We're working with gamepads, so we want to defensively ensure that we're using the clamped values
-                            if let Some(axis_pair) =
-                                player_move_action.clamped_axis_pair(ControlAction::AxisMove)
-                            {
-                                match axis_pair.x() > 0.0 {
-                                    true => direction += Vec3::new(1.0, 0.0, 0.0), // move right
-                                    false => direction += Vec3::new(-1.0, 0.0, 0.0), // move left
-                                }
-                                match axis_pair.y() > 0.0 {
-                                    true => direction += Vec3::new(0.0, 1.0, 0.0),   // up
-                                    false => direction += Vec3::new(0.0, -1.0, 0.0), // down
-                                }
+    for (mut player_transform, player_move_action, indices, mut timer, mut sprite) in
+        player_query.iter_mut()
+    {
+        let mut direction = Vec3::ZERO;
+        for input_direction in ControlAction::PLAYER_MOVE {
+            if player_move_action.pressed(input_direction) {
+                match input_direction {
+                    ControlAction::Up => direction += Vec3::new(0.0, 1.0, 0.0),
+                    ControlAction::Down => direction += Vec3::new(0.0, -1.0, 0.0),
+                    ControlAction::Left => direction += Vec3::new(-1.0, 0.0, 0.0),
+                    ControlAction::Right => direction += Vec3::new(1.0, 0.0, 0.0),
+                    ControlAction::AxisMove => {
+                        // Each action has a button-like state of its own that you can check
+                        // We're working with gamepads, so we want to defensively ensure that we're using the clamped values
+                        if let Some(axis_pair) =
+                            player_move_action.clamped_axis_pair(ControlAction::AxisMove)
+                        {
+                            match axis_pair.x() > 0.0 {
+                                true => direction += Vec3::new(1.0, 0.0, 0.0), // move right
+                                false => direction += Vec3::new(-1.0, 0.0, 0.0), // move left
+                            }
+                            match axis_pair.y() > 0.0 {
+                                true => direction += Vec3::new(0.0, 1.0, 0.0),   // up
+                                false => direction += Vec3::new(0.0, -1.0, 0.0), // down
                             }
                         }
-
-                        _ => {}
                     }
+
+                    _ => {}
                 }
             }
-
-            if direction.length() > 0.0 {
-                direction = direction.normalize();
-                for (indices, mut timer, mut sprite) in &mut player_animate_query {
-                    timer.tick(time.delta());
-                    if timer.just_finished() {
-                        sprite.index =
-                            if sprite.index < indices.first || sprite.index == indices.last {
-                                8
-                            } else {
-                                sprite.index + 1
-                            };
-                    }
-                }
-            } else {
-                if let Ok((_, _, mut sprite)) = player_animate_query.get_single_mut() {
-                    sprite.index = 0;
-                }
-            }
-
-            player_transform.translation += direction * PLAYER_SPEED * time.delta_seconds();
         }
+
+        if direction.length() > 0.0 {
+            direction = direction.normalize();
+            timer.tick(time.delta());
+            if timer.just_finished() {
+                sprite.index = if sprite.index < indices.first || sprite.index == indices.last {
+                    8
+                } else {
+                    sprite.index + 1
+                };
+            }
+        } else {
+            sprite.index = 0;
+        }
+
+        player_transform.translation += direction * PLAYER_SPEED * time.delta_seconds();
     }
 }
 

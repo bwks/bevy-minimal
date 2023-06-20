@@ -1,6 +1,6 @@
 use bevy::prelude::Component;
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub enum Player {
     One,
     Two,

@@ -11,8 +11,8 @@ use crate::game::states::GameState;
 use crate::player::actions::ControlAction;
 use crate::player::systems::{
     fireball_movement_system, player_confinement_system, player_fire_system,
-    player_fireball_hit_enemy_system, player_movement_system, player_spawn_system,
-    respawn_player_system,
+    player_fireball_hit_enemy_system, player_movement_system, player_respawn_system,
+    player_spawn_system,
 };
 
 const PLAYER_SPRITE: SpriteSheet = SpriteSheet {
@@ -52,6 +52,6 @@ impl Plugin for PlayerPlugin {
                 )
                     .in_set(PlayerSystemSet),
             )
-            .add_system(respawn_player_system);
+            .add_system(player_respawn_system);
     }
 }

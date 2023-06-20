@@ -15,14 +15,12 @@ pub fn spawn_camera_system(mut commands: Commands) {
 }
 
 pub fn toggle_game_state_system(
-    player_query: Query<Entity, With<Player>>,
     keyboard_input: Res<Input<KeyCode>>,
     controller_query: Query<&ActionState<ControlAction>>,
     game_state: Res<State<GameState>>,
     mut next_app_state: ResMut<NextState<GameState>>,
 ) {
-    if let Ok(_player) = player_query.get_single() {
-        let controller_input = controller_query.single();
+    for controller_input in controller_query.iter() {
         if keyboard_input.just_pressed(KeyCode::Space)
             || controller_input.just_pressed(ControlAction::Pause)
         {
@@ -43,7 +41,7 @@ pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>)
         // Create a TextBundle that has a Text with a single section.
         TextBundle::from_section(
             // Accepts a `String` or any type that converts into a `String`, such as `&str`
-            "Score: 0",
+            "Player 1: 0",
             TextStyle {
                 font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                 font_size: 50.0,
@@ -56,6 +54,31 @@ pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>)
             position_type: PositionType::Absolute,
             position: UiRect {
                 top: Val::Px(70.0),
+                left: Val::Px(15.0),
+                ..default()
+            },
+            ..default()
+        }),
+        ColorText,
+    ));
+
+    commands.spawn((
+        // Create a TextBundle that has a Text with a single section.
+        TextBundle::from_section(
+            // Accepts a `String` or any type that converts into a `String`, such as `&str`
+            "Player 2: 0",
+            TextStyle {
+                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                font_size: 50.0,
+                color: Color::WHITE,
+            },
+        ) // Set the alignment of the Text
+        .with_text_alignment(TextAlignment::Center)
+        // Set the style of the TextBundle itself.
+        .with_style(Style {
+            position_type: PositionType::Absolute,
+            position: UiRect {
+                top: Val::Px(120.0),
                 left: Val::Px(15.0),
                 ..default()
             },
@@ -81,7 +104,16 @@ pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>)
                 font_size: 30.0,
                 color: Color::GOLD,
             }),
-        ]),
+        ])
+        .with_style(Style {
+            position_type: PositionType::Absolute,
+            position: UiRect {
+                top: Val::Px(170.0),
+                left: Val::Px(15.0),
+                ..default()
+            },
+            ..default()
+        }),
         FpsText,
     ));
 }
@@ -102,7 +134,7 @@ pub fn text_color_system(
             alpha: 1.0,
         };
         if score.is_changed() {
-            text.sections[0].value = format!("Score {}", score.value)
+            text.sections[0].value = format!("Player {}", score.value)
         }
     }
 }
@@ -132,27 +164,21 @@ pub fn exit_game_system(
 
 pub fn restart_game_system(
     mut commands: Commands,
-    player_query: Query<Entity, With<Player>>,
+    player_query: Query<(Entity, &ActionState<ControlAction>), With<Player>>,
     enemy_query: Query<Entity, With<Enemy>>,
     keyboard_input: Res<Input<KeyCode>>,
-    controller_query: Query<&ActionState<ControlAction>>,
+    // controller_query: Query<&ActionState<ControlAction>>,
 ) {
-    if let Ok(controller_input) = controller_query.get_single() {
-        if controller_input.just_pressed(ControlAction::Restart) {
-            if let Ok(player) = player_query.get_single() {
-                commands.entity(player).despawn();
-            }
+    for (player, controller_input) in player_query.iter() {
+        if controller_input.just_pressed(ControlAction::Restart)
+            || keyboard_input.just_pressed(KeyCode::F2)
+        {
+            // for player in player_query.iter() {
+            commands.entity(player).despawn();
+            // }
             for entity in enemy_query.iter() {
                 commands.entity(entity).despawn();
             }
-        }
-    };
-    if keyboard_input.just_pressed(KeyCode::F2) {
-        for entity in player_query.iter() {
-            commands.entity(entity).despawn();
-        }
-        for entity in enemy_query.iter() {
-            commands.entity(entity).despawn();
         }
     }
 }

@@ -15,7 +15,7 @@ pub enum ControlAction {
 
 impl ControlAction {
     // Lists like this can be very useful for quickly matching subsets of actions
-    pub const PLAYER_MOVE_KEYS: [Self; 5] = [
+    pub const PLAYER_MOVE: [Self; 5] = [
         Self::Left,
         Self::Right,
         Self::Up,

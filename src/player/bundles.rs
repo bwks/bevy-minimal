@@ -15,7 +15,7 @@ pub struct PlayerBundle {
 }
 
 impl PlayerBundle {
-    pub fn default_input_map(player: Player) -> InputMap<ControlAction> {
+    pub fn input_map(player: Player) -> InputMap<ControlAction> {
         let mut input_map = match player {
             Player::One => InputMap::new([
                 (KeyCode::W, ControlAction::Up),
@@ -40,7 +40,6 @@ impl PlayerBundle {
         input_map.insert(DualAxis::left_stick(), ControlAction::AxisMove);
 
         input_map.insert_multiple([
-            // (DualAxis::left_stick(), ControlAction::AxisMove),
             (GamepadButtonType::DPadUp, ControlAction::Up),
             (GamepadButtonType::DPadDown, ControlAction::Down),
             (GamepadButtonType::DPadLeft, ControlAction::Left),
