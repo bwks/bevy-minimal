@@ -10,38 +10,51 @@ use leafwing_input_manager::InputManagerBundle;
 use crate::common::components::{AnimationIndices, AnimationTimer};
 use crate::player::actions::ControlAction;
 use crate::player::bundles::PlayerBundle;
-use crate::player::components::{Fireball, Playable, Player};
+use crate::player::components::{Fireball, Lives, Playable, Player, PlayerState};
 use crate::player::{
-    PLAYER_FIREBALL_SCALE, PLAYER_FIREBALL_SIZE, PLAYER_FIREBALL_SPRITE, PLAYER_SCALE, PLAYER_SIZE,
-    PLAYER_SPEED, PLAYER_SPRITE,
+    PLAYER1_SPRITE, PLAYER2_SPRITE, PLAYER_FIREBALL_SCALE, PLAYER_FIREBALL_SIZE,
+    PLAYER_FIREBALL_SPRITE, PLAYER_SCALE, PLAYER_SIZE, PLAYER_SPEED,
 };
 
 use crate::enemy::components::Enemy;
 use crate::enemy::ENEMY_SIZE;
 
-use crate::score::resources::Score;
+use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
 
 use crate::common::components::{Movable, Velocity};
 use crate::common::{BASE_SPEED, TIME_STEP};
 
 pub fn player_spawn_system(
     mut commands: Commands,
+    // controller_query: Query<&ActionState<ControlAction>>,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
     let window = window_query.get_single().unwrap();
 
-    let texture_handle = asset_server.load(PLAYER_SPRITE.file);
-    let texture_atlas = TextureAtlas::from_grid(
-        texture_handle,
-        Vec2::new(PLAYER_SPRITE.width, PLAYER_SPRITE.height),
-        PLAYER_SPRITE.columns,
-        PLAYER_SPRITE.rows,
+    let texture_handle_p1 = asset_server.load(PLAYER1_SPRITE.file);
+    let texture_atlas_p1 = TextureAtlas::from_grid(
+        texture_handle_p1,
+        Vec2::new(PLAYER1_SPRITE.width, PLAYER1_SPRITE.height),
+        PLAYER1_SPRITE.columns,
+        PLAYER1_SPRITE.rows,
         None,
         None,
     );
-    let texture_atlas_handle = texture_atlases.add(texture_atlas);
+    let texture_atlas_handle_p1 = texture_atlases.add(texture_atlas_p1);
+
+    let texture_handle_p2 = asset_server.load(PLAYER2_SPRITE.file);
+    let texture_atlas_p2 = TextureAtlas::from_grid(
+        texture_handle_p2,
+        Vec2::new(PLAYER2_SPRITE.width, PLAYER2_SPRITE.height),
+        PLAYER2_SPRITE.columns,
+        PLAYER2_SPRITE.rows,
+        None,
+        None,
+    );
+    let texture_atlas_handle_p2 = texture_atlases.add(texture_atlas_p2);
+
     // Use only the subset of sprites in the sheet that make up the run animation
     let animation_indices = AnimationIndices { first: 8, last: 11 };
 
@@ -54,18 +67,20 @@ pub fn player_spawn_system(
             },
         },
         SpriteSheetBundle {
-            texture_atlas: texture_atlas_handle.clone(),
+            texture_atlas: texture_atlas_handle_p1.clone(),
             sprite: TextureAtlasSprite::new(animation_indices.first),
             transform: Transform {
                 translation: Vec3::new(-window.width() / 4.0, 0.0, 10.0),
-                scale: Vec3::splat(PLAYER_SPRITE.scale),
+                scale: Vec3::splat(PLAYER1_SPRITE.scale),
                 ..Default::default()
             },
             ..Default::default()
         },
         animation_indices,
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+        PlayerState::Alive,
         Playable {},
+        Lives::default(),
     ));
 
     commands.spawn((
@@ -77,31 +92,74 @@ pub fn player_spawn_system(
             },
         },
         SpriteSheetBundle {
-            texture_atlas: texture_atlas_handle.clone(),
+            texture_atlas: texture_atlas_handle_p2.clone(),
             sprite: TextureAtlasSprite::new(animation_indices.first),
             transform: Transform {
                 translation: Vec3::new(-window.width() / 4.0 + 50.0, 10.0, 10.0),
-                scale: Vec3::splat(PLAYER_SPRITE.scale),
+                scale: Vec3::splat(PLAYER2_SPRITE.scale),
                 ..Default::default()
             },
             ..Default::default()
         },
         animation_indices,
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+        PlayerState::Alive,
         Playable {},
+        Lives::default(),
     ));
 }
 
-pub fn player_despawn_system(
-    mut commands: Commands,
-    player_query: Query<(Entity, &ActionState<ControlAction>), With<Player>>,
+pub fn player_respawn_system(
+    mut player_query: Query<
+        (
+            &Player,
+            &mut PlayerState,
+            &Lives,
+            &ActionState<ControlAction>,
+            &mut Handle<TextureAtlas>,
+        ),
+        With<Playable>,
+    >,
     keyboard_input: Res<Input<KeyCode>>,
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
-    for (player_entity, controller_input) in player_query.iter() {
-        if keyboard_input.just_pressed(KeyCode::F1)
-            || controller_input.just_pressed(ControlAction::Restart)
-        {
-            commands.entity(player_entity).despawn();
+    for (player, mut player_state, player_lives, controller_input, mut sprite_handle) in
+        player_query.iter_mut()
+    {
+        if *player_state == PlayerState::Dead && player_lives.count > 0 {
+            if keyboard_input.just_pressed(KeyCode::F1)
+                || controller_input.just_pressed(ControlAction::Restart)
+            {
+                let player_sprite_atlas = match player {
+                    Player::One => {
+                        let texture_handle = asset_server.load(PLAYER1_SPRITE.file);
+                        let texture_atlas = TextureAtlas::from_grid(
+                            texture_handle,
+                            Vec2::new(PLAYER1_SPRITE.width, PLAYER1_SPRITE.height),
+                            PLAYER1_SPRITE.columns,
+                            PLAYER1_SPRITE.rows,
+                            None,
+                            None,
+                        );
+                        texture_atlases.add(texture_atlas)
+                    }
+                    Player::Two => {
+                        let texture_handle = asset_server.load(PLAYER2_SPRITE.file);
+                        let texture_atlas = TextureAtlas::from_grid(
+                            texture_handle,
+                            Vec2::new(PLAYER2_SPRITE.width, PLAYER2_SPRITE.height),
+                            PLAYER2_SPRITE.columns,
+                            PLAYER2_SPRITE.rows,
+                            None,
+                            None,
+                        );
+                        texture_atlases.add(texture_atlas)
+                    }
+                };
+                *player_state = PlayerState::Alive;
+                *sprite_handle = player_sprite_atlas;
+            }
         }
     }
 }
@@ -109,10 +167,13 @@ pub fn player_despawn_system(
 pub fn player_fire_system(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    player_query: Query<(&Transform, &ActionState<ControlAction>), With<Player>>,
+    player_query: Query<(&Transform, &ActionState<ControlAction>, &PlayerState), With<Playable>>,
+    audio: Res<Audio>,
 ) {
-    for (player_transform, player_fire_action) in player_query.iter() {
-        if player_fire_action.just_pressed(ControlAction::Fire) {
+    for (player_transform, player_fire_action, player_state) in player_query.iter() {
+        if *player_state == PlayerState::Alive
+            && player_fire_action.just_pressed(ControlAction::Fire)
+        {
             let (player_x, player_y) = (
                 player_transform.translation.x,
                 player_transform.translation.y,
@@ -133,6 +194,8 @@ pub fn player_fire_system(
                 Movable { auto_despawn: true },
                 Velocity { x: 1.0, y: 0.0 },
             ));
+            let fire_sound = asset_server.load("shoot.ogg");
+            audio.play(fire_sound);
         }
     }
 }
@@ -210,27 +273,30 @@ pub fn player_confinement_system(
     for mut player_transform in player_query.iter_mut() {
         let window = window_query.get_single().unwrap();
 
-        let x_min = -window.width() / 2.0 + PLAYER_SIZE.0 + 5.0;
-        let x_max = window.width() / 2.0 - PLAYER_SIZE.0 - 5.0;
-        let y_min = -window.height() / 2.0 + PLAYER_SIZE.1 + 5.0;
-        let y_max = window.height() / 2.0 - PLAYER_SIZE.1 - 5.0;
+        let left_window_edge = -window.width() / 2.0 + PLAYER_SIZE.0 + 5.0;
+        let right_window_edge = window.width() / 2.0 - PLAYER_SIZE.0 - 5.0;
+        let bottom_window_edge = -window.height() / 2.0 + PLAYER_SIZE.1 + 5.0;
+        let top_window_edge = window.height() / 2.0 - PLAYER_SIZE.1 - 5.0;
 
-        let mut translation = player_transform.translation;
+        // let mut translation = player_transform.translation;
+        let mut player_x = player_transform.translation.x;
+        let mut player_y = player_transform.translation.y;
 
         // Bound the player x position
-        if translation.x < x_min {
-            translation.x = x_min;
-        } else if translation.x > x_max {
-            translation.x = x_max;
+        if player_x < left_window_edge {
+            player_x = left_window_edge;
+        } else if player_x > right_window_edge {
+            player_x = right_window_edge;
         }
         // Bound the players y position.
-        if translation.y < y_min {
-            translation.y = y_min;
-        } else if translation.y > y_max {
-            translation.y = y_max;
+        if player_y < bottom_window_edge {
+            player_y = bottom_window_edge;
+        } else if player_y > top_window_edge {
+            player_y = top_window_edge;
         }
 
-        player_transform.translation = translation;
+        player_transform.translation.x = player_x;
+        player_transform.translation.y = player_y;
     }
 }
 
@@ -257,9 +323,21 @@ pub fn fireball_movement_system(
 pub fn player_fireball_hit_enemy_system(
     mut commands: Commands,
     fireball_query: Query<(Entity, &Transform), With<Fireball>>,
-    enemy_query: Query<(Entity, &Transform), With<Enemy>>,
+    mut enemy_query: Query<
+        (
+            Entity,
+            &Transform,
+            // &mut Handle<TextureAtlas>,
+            // &mut AnimationIndices,
+        ),
+        With<Enemy>,
+    >,
     window_query: Query<&Window, With<PrimaryWindow>>,
-    mut score: ResMut<Score>,
+    mut player_one_score: ResMut<PlayerOneScore>,
+    // asset_server: Res<AssetServer>,
+    // mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    asset_server: Res<AssetServer>,
+    audio: Res<Audio>,
 ) {
     let window = window_query.get_single().unwrap();
     let world_right_edge = window.width() / 2.0 - 20.0;
@@ -267,39 +345,52 @@ pub fn player_fireball_hit_enemy_system(
     let mut despawned_entities: HashSet<Entity> = HashSet::new();
 
     // iterate through the lasers
-    for (fireball_entity, fireball_tf) in fireball_query.iter() {
-        if despawned_entities.contains(&fireball_entity) {
-            continue;
-        }
-
-        // let laser_scale = fireball_tf.scale.xy();
-
+    for (fireball_entity, fireball_transform) in fireball_query.iter() {
         // iterate through the enemies
-        for (enemy_entity, enemy_tf) in enemy_query.iter() {
+        // for (enemy_entity, enemy_transform, mut sprite_handle, mut animation_indicies) in enemy_query.iter_mut()
+        for (enemy_entity, enemy_transform) in enemy_query.iter_mut() {
             if despawned_entities.contains(&enemy_entity)
                 || despawned_entities.contains(&fireball_entity)
             {
                 continue;
             }
 
-            // let enemy_scale = enemy_tf.scale.xy();
+            // let enemy_scale = enemy_transform.scale.xy();
 
             // determine if collision
             let collision = collide(
-                fireball_tf.translation,
+                fireball_transform.translation,
                 Vec2::new(
                     PLAYER_FIREBALL_SIZE.0 * PLAYER_FIREBALL_SCALE,
                     PLAYER_FIREBALL_SIZE.1 * PLAYER_FIREBALL_SCALE,
                 ),
-                enemy_tf.translation,
+                enemy_transform.translation,
                 Vec2::new(ENEMY_SIZE.0, ENEMY_SIZE.1),
             );
 
             // if enemy has entered the screen
-            if enemy_tf.translation.x < world_right_edge {
+            if enemy_transform.translation.x < world_right_edge {
                 // perform collision
                 if collision.is_some() {
                     // remove the enemy
+
+                    // let texture_handle = asset_server.load(EPLOSION_SPRITE.file);
+                    // let texture_atlas = TextureAtlas::from_grid(
+                    //     texture_handle,
+                    //     Vec2::new(EPLOSION_SPRITE.width, EPLOSION_SPRITE.height),
+                    //     EPLOSION_SPRITE.columns,
+                    //     EPLOSION_SPRITE.rows,
+                    //     None,
+                    //     None,
+                    // );
+
+                    // let enemy_dead_sprite_atlas = texture_atlases.add(texture_atlas);
+                    // *animation_indicies = AnimationIndices { first: 0, last: 5 };
+                    // *sprite_handle = enemy_dead_sprite_atlas;
+
+                    let zombie_die_sound = asset_server.load("zombie-die.ogg");
+                    audio.play(zombie_die_sound);
+
                     commands.entity(enemy_entity).despawn();
                     despawned_entities.insert(enemy_entity);
 
@@ -308,18 +399,9 @@ pub fn player_fireball_hit_enemy_system(
                     despawned_entities.insert(fireball_entity);
 
                     // update score
-                    score.value += 1;
+                    player_one_score.value += 1;
 
-                    // spawn the explosionToSpawn
-                    // commands.spawn(SpriteBundle {
-                    //     // transform: Transform::from_xyz(window.width() / 4.0, window.height() / 4.0, 0.0),
-                    //     texture: asset_server.load("explosion.png"),
-                    //     transform: Transform {
-                    //         scale: Vec3::new(0.5, 0.5, 1.0),
-                    //         ..Default::default()
-                    //     },
-                    //     ..Default::default()
-                    // });
+                    break;
                 }
             }
         }

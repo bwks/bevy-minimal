@@ -1,9 +1,26 @@
 use bevy::prelude::Component;
 
-#[derive(Component, Clone)]
+#[derive(Component, Clone, Debug)]
 pub enum Player {
     One,
     Two,
+}
+
+#[derive(Component, Debug, PartialEq, Eq)]
+pub enum PlayerState {
+    Alive,
+    Dead,
+}
+
+#[derive(Component)]
+pub struct Lives {
+    pub count: u8,
+}
+
+impl Default for Lives {
+    fn default() -> Self {
+        Self { count: 3 }
+    }
 }
 
 #[derive(Component)]

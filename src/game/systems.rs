@@ -8,7 +8,7 @@ use crate::game::components::{ColorText, FpsText};
 use crate::game::states::GameState;
 use crate::player::actions::ControlAction;
 use crate::player::components::Player;
-use crate::score::resources::Score;
+use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
 
 pub fn spawn_camera_system(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
@@ -37,6 +37,7 @@ pub fn toggle_game_state_system(
 }
 
 pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>) {
+    // 0
     commands.spawn((
         // Create a TextBundle that has a Text with a single section.
         TextBundle::from_section(
@@ -62,6 +63,7 @@ pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>)
         ColorText,
     ));
 
+    // 1
     commands.spawn((
         // Create a TextBundle that has a Text with a single section.
         TextBundle::from_section(
@@ -108,7 +110,7 @@ pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>)
         .with_style(Style {
             position_type: PositionType::Absolute,
             position: UiRect {
-                top: Val::Px(170.0),
+                top: Val::Px(220.0),
                 left: Val::Px(15.0),
                 ..default()
             },
@@ -119,23 +121,28 @@ pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>)
 }
 
 pub fn text_color_system(
-    score: Res<Score>,
+    player_one_score: Res<PlayerOneScore>,
+    // player_two_score: Res<PlayerTwoScore>,
     time: Res<Time>,
     mut query: Query<&mut Text, With<ColorText>>,
 ) {
-    for mut text in &mut query {
+    for mut text in &mut query.iter_mut() {
         let seconds = time.elapsed_seconds();
 
         // Update the color of the first and only section.
+        // println!("text sections: {:#?}", text)
         text.sections[0].style.color = Color::Rgba {
             red: (1.25 * seconds).sin() / 2.0 + 0.5,
             green: (0.75 * seconds).sin() / 2.0 + 0.5,
             blue: (0.50 * seconds).sin() / 2.0 + 0.5,
             alpha: 1.0,
         };
-        if score.is_changed() {
-            text.sections[0].value = format!("Player {}", score.value)
+        if player_one_score.is_changed() {
+            text.sections[0].value = format!("Player 1: {}", player_one_score.value)
         }
+        // if player_two_score.is_changed() {
+        //     text.sections[1].value = format!("Player 2: {}", player_two_score.value)
+        // }
     }
 }
 

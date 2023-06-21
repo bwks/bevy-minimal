@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use rand::Rng;
 
 use crate::enemy::components::Enemy;
@@ -7,10 +9,10 @@ use crate::game::states::GameState;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
-use crate::player::components::{Playable, Player};
-use crate::player::PLAYER_SIZE;
+use crate::player::components::{Lives, Playable, Player, PlayerState};
+use crate::player::{PLAYER1_DEAD_SPRITE, PLAYER2_DEAD_SPRITE, PLAYER_SIZE};
 
-use crate::score::resources::Score;
+use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
 
 use crate::common::components::{AnimationIndices, AnimationTimer, Movable, Velocity};
 use crate::common::{BASE_SPEED, TIME_STEP};
@@ -113,7 +115,8 @@ pub fn enemy_movement_system(
     mut enemy_query: Query<(Entity, &Velocity, &mut Transform, &Movable), With<Enemy>>,
     player_query: Query<(&Transform, &Playable), Without<Enemy>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
-    mut score: ResMut<Score>,
+    mut player_one_score: ResMut<PlayerOneScore>,
+    mut player_two_score: ResMut<PlayerTwoScore>,
     mut enemy_animate_query: Query<
         (
             &AnimationIndices,
@@ -125,11 +128,16 @@ pub fn enemy_movement_system(
     time: Res<Time>,
 ) {
     let window = window_query.get_single().unwrap();
+    let mut despawned_entities: HashSet<Entity> = HashSet::new();
 
     for (player_transform, _playable) in player_query.iter() {
         let player_y = player_transform.translation.y;
 
         for (enemy_entity, velocity, mut enemy_transform, movable) in enemy_query.iter_mut() {
+            if despawned_entities.contains(&enemy_entity) {
+                continue;
+            }
+
             let enemy_translation = &mut enemy_transform.translation;
             enemy_translation.x -= velocity.x * TIME_STEP * BASE_SPEED / 2.0 + 1.0;
 
@@ -157,8 +165,13 @@ pub fn enemy_movement_system(
                 let window_margin = -window.width() / 2.0 - 20.0;
                 if enemy_translation.x < window_margin {
                     commands.entity(enemy_entity).despawn();
-                    if score.value > 0 {
-                        score.value -= 1;
+                    despawned_entities.insert(enemy_entity);
+
+                    if player_one_score.value > 0 {
+                        player_one_score.value -= 1;
+                    }
+                    if player_two_score.value > 0 {
+                        player_two_score.value -= 1;
                     }
                 }
             }
@@ -168,22 +181,71 @@ pub fn enemy_movement_system(
 
 pub fn enemy_hit_player_system(
     mut commands: Commands,
-    player_query: Query<(Entity, &Transform), With<Player>>,
+    mut player_query: Query<
+        (
+            &Player,
+            &mut PlayerState,
+            &mut Lives,
+            &Transform,
+            &mut Handle<TextureAtlas>,
+        ),
+        With<Playable>,
+    >,
     enemy_query: Query<&Transform, With<Enemy>>,
-    score: Res<Score>,
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    // score: Res<Score>,
+    audio: Res<Audio>,
 ) {
-    // if let Ok((player_entity, player_transform)) = player_query.get_single() {
-    for (player_entity, player_transform) in player_query.iter() {
-        for enemy_transform in enemy_query.iter() {
-            let distance = player_transform
-                .translation
-                .distance(enemy_transform.translation);
-            let player_radius = PLAYER_SIZE.0 / 2.0;
-            let enemy_radius = ENEMY_SIZE.0 / 2.0;
-            if distance < player_radius + enemy_radius {
-                commands.insert_resource(NextState(Some(GameState::Paused)));
-                commands.entity(player_entity).despawn();
-                println!("Final Score: {}", score.value);
+    if player_query.iter().len() == 0 {
+        commands.insert_resource(NextState(Some(GameState::Paused)));
+    }
+
+    for (player, mut player_state, mut player_lives, player_transform, mut sprite_handle) in
+        player_query.iter_mut()
+    {
+        if *player_state == PlayerState::Alive {
+            let player_dead_sprite_atlas = match player {
+                Player::One => {
+                    let texture_handle = asset_server.load(PLAYER1_DEAD_SPRITE.file);
+                    let texture_atlas = TextureAtlas::from_grid(
+                        texture_handle,
+                        Vec2::new(PLAYER1_DEAD_SPRITE.width, PLAYER1_DEAD_SPRITE.height),
+                        PLAYER1_DEAD_SPRITE.columns,
+                        PLAYER1_DEAD_SPRITE.rows,
+                        None,
+                        None,
+                    );
+                    texture_atlases.add(texture_atlas)
+                }
+                Player::Two => {
+                    let texture_handle = asset_server.load(PLAYER2_DEAD_SPRITE.file);
+                    let texture_atlas = TextureAtlas::from_grid(
+                        texture_handle,
+                        Vec2::new(PLAYER2_DEAD_SPRITE.width, PLAYER2_DEAD_SPRITE.height),
+                        PLAYER2_DEAD_SPRITE.columns,
+                        PLAYER2_DEAD_SPRITE.rows,
+                        None,
+                        None,
+                    );
+                    texture_atlases.add(texture_atlas)
+                }
+            };
+
+            for enemy_transform in enemy_query.iter() {
+                let distance = player_transform
+                    .translation
+                    .distance(enemy_transform.translation);
+                let player_radius = PLAYER_SIZE.0 / 2.0;
+                let enemy_radius = ENEMY_SIZE.0 / 2.0;
+                if distance < player_radius + enemy_radius {
+                    *player_state = PlayerState::Dead;
+                    player_lives.count -= 1;
+                    *sprite_handle = player_dead_sprite_atlas;
+                    let dead_sound = asset_server.load("dead.ogg");
+                    audio.play(dead_sound);
+                    break;
+                }
             }
         }
     }
