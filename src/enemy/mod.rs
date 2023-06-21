@@ -12,7 +12,7 @@ use crate::enemy::systems::{
 };
 use crate::game::states::GameState;
 
-const ENEMY_SPRITE_1: SpriteSheet = SpriteSheet {
+pub const ENEMY1_SPRITE: SpriteSheet = SpriteSheet {
     file: "zombie-walk.png",
     width: 32.0,
     height: 32.0,
@@ -24,7 +24,7 @@ const ENEMY_SPRITE_1: SpriteSheet = SpriteSheet {
 pub const ENEMY_SPAWN_TIME: f32 = 2.0;
 // pub const ENEMY_SPRITE: &str = "zombie.png";
 // pub const ENEMY_SPRITE: &str = "ZombieToast.png";
-// pub const ENEMY_SPRITE_1: &str = "zombie-man-walk-96px.png";
+// pub const ENEMY1_SPRITE: &str = "zombie-man-walk-96px.png";
 pub const ENEMY_SPRITE_2: &str = "zombie-woman-walk-96px.png";
 pub const ENEMY_SPRITE_3: &str = "zombie-wild-walk-96px.png";
 pub const ENEMY_SIZE: (f32, f32) = (48.0, 92.0); // (x, y)

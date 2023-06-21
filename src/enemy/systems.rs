@@ -4,7 +4,7 @@ use rand::Rng;
 
 use crate::enemy::components::Enemy;
 use crate::enemy::resources::EnemySpawnTimer;
-use crate::enemy::{ENEMY_SIZE, ENEMY_SPRITE_1, NUMBER_OF_ENEMIES};
+use crate::enemy::{ENEMY1_SPRITE, ENEMY_SIZE, NUMBER_OF_ENEMIES};
 use crate::game::states::GameState;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
@@ -33,12 +33,12 @@ pub fn enemy_spawn_system(
     for _ in 0..NUMBER_OF_ENEMIES {
         let mut rng = rand::thread_rng();
 
-        let texture_handle = asset_server.load(ENEMY_SPRITE_1.file);
+        let texture_handle = asset_server.load(ENEMY1_SPRITE.file);
         let texture_atlas = TextureAtlas::from_grid(
             texture_handle,
-            Vec2::new(ENEMY_SPRITE_1.width, ENEMY_SPRITE_1.height),
-            ENEMY_SPRITE_1.columns,
-            ENEMY_SPRITE_1.rows,
+            Vec2::new(ENEMY1_SPRITE.width, ENEMY1_SPRITE.height),
+            ENEMY1_SPRITE.columns,
+            ENEMY1_SPRITE.rows,
             None,
             None,
         );
@@ -62,7 +62,7 @@ pub fn enemy_spawn_system(
                 transform: Transform {
                     translation: Vec3::new(random_width, random_height, 10.0),
                     // rotation: Quat::from_rotation_y(std::f32::consts::PI),
-                    scale: Vec3::splat(ENEMY_SPRITE_1.scale),
+                    scale: Vec3::splat(ENEMY1_SPRITE.scale),
                     ..Default::default()
                 },
                 ..Default::default()

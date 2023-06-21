@@ -14,8 +14,9 @@ use crate::player::systems::{
     player_fireball_hit_enemy_system, player_movement_system, player_respawn_system,
     player_spawn_system,
 };
+use crate::setup_system;
 
-const PLAYER1_SPRITE: SpriteSheet = SpriteSheet {
+pub const PLAYER1_SPRITE: SpriteSheet = SpriteSheet {
     file: "player1.png",
     width: 32.0,
     height: 32.0,
@@ -24,7 +25,7 @@ const PLAYER1_SPRITE: SpriteSheet = SpriteSheet {
     rows: 4,
 };
 
-const PLAYER2_SPRITE: SpriteSheet = SpriteSheet {
+pub const PLAYER2_SPRITE: SpriteSheet = SpriteSheet {
     // file: "player2.png",
     file: "player2.png",
     width: 32.0,
@@ -78,6 +79,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(InputManagerPlugin::<ControlAction>::default())
             .configure_set(PlayerSystemSet.run_if(in_state(GameState::Playing)))
+            // .add_startup_systems((setup_system, player_spawn_system).chain())
             .add_startup_system(player_spawn_system)
             .add_systems(
                 (

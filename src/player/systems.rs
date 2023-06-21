@@ -8,6 +8,7 @@ use leafwing_input_manager::prelude::ActionState;
 use leafwing_input_manager::InputManagerBundle;
 
 use crate::common::components::{AnimationIndices, AnimationTimer};
+use crate::common::resources::GameTextures;
 use crate::player::actions::ControlAction;
 use crate::player::bundles::PlayerBundle;
 use crate::player::components::{Fireball, Lives, Playable, Player, PlayerState};
@@ -28,21 +29,22 @@ pub fn player_spawn_system(
     mut commands: Commands,
     // controller_query: Query<&ActionState<ControlAction>>,
     asset_server: Res<AssetServer>,
+    game_textures: Res<GameTextures>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
     let window = window_query.get_single().unwrap();
 
-    let texture_handle_p1 = asset_server.load(PLAYER1_SPRITE.file);
-    let texture_atlas_p1 = TextureAtlas::from_grid(
-        texture_handle_p1,
-        Vec2::new(PLAYER1_SPRITE.width, PLAYER1_SPRITE.height),
-        PLAYER1_SPRITE.columns,
-        PLAYER1_SPRITE.rows,
-        None,
-        None,
-    );
-    let texture_atlas_handle_p1 = texture_atlases.add(texture_atlas_p1);
+    // let texture_handle_p1 = asset_server.load(PLAYER1_SPRITE.file);
+    // let texture_atlas_p1 = TextureAtlas::from_grid(
+    //     texture_handle_p1,
+    //     Vec2::new(PLAYER1_SPRITE.width, PLAYER1_SPRITE.height),
+    //     PLAYER1_SPRITE.columns,
+    //     PLAYER1_SPRITE.rows,
+    //     None,
+    //     None,
+    // );
+    // let texture_atlas_handle_p1 = texture_atlases.add(texture_atlas_p1);
 
     let texture_handle_p2 = asset_server.load(PLAYER2_SPRITE.file);
     let texture_atlas_p2 = TextureAtlas::from_grid(
@@ -67,7 +69,7 @@ pub fn player_spawn_system(
             },
         },
         SpriteSheetBundle {
-            texture_atlas: texture_atlas_handle_p1.clone(),
+            texture_atlas: game_textures.player_one.clone(),
             sprite: TextureAtlasSprite::new(animation_indices.first),
             transform: Transform {
                 translation: Vec3::new(-window.width() / 4.0, 0.0, 10.0),
