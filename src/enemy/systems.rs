@@ -15,6 +15,7 @@ use crate::player::{PLAYER1_DEAD_SPRITE, PLAYER2_DEAD_SPRITE, PLAYER_SIZE};
 use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
 
 use crate::common::components::{AnimationIndices, AnimationTimer, Movable, Velocity};
+use crate::common::resources::GameTextures;
 use crate::common::{BASE_SPEED, TIME_STEP};
 
 pub fn enemy_spawn_system(
@@ -192,9 +193,9 @@ pub fn enemy_hit_player_system(
         With<Playable>,
     >,
     enemy_query: Query<&Transform, With<Enemy>>,
-    asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    game_textures: Res<GameTextures>,
     // score: Res<Score>,
+    asset_server: Res<AssetServer>,
     audio: Res<Audio>,
 ) {
     if player_query.iter().len() == 0 {
@@ -206,30 +207,8 @@ pub fn enemy_hit_player_system(
     {
         if *player_state == PlayerState::Alive {
             let player_dead_sprite_atlas = match player {
-                Player::One => {
-                    let texture_handle = asset_server.load(PLAYER1_DEAD_SPRITE.file);
-                    let texture_atlas = TextureAtlas::from_grid(
-                        texture_handle,
-                        Vec2::new(PLAYER1_DEAD_SPRITE.width, PLAYER1_DEAD_SPRITE.height),
-                        PLAYER1_DEAD_SPRITE.columns,
-                        PLAYER1_DEAD_SPRITE.rows,
-                        None,
-                        None,
-                    );
-                    texture_atlases.add(texture_atlas)
-                }
-                Player::Two => {
-                    let texture_handle = asset_server.load(PLAYER2_DEAD_SPRITE.file);
-                    let texture_atlas = TextureAtlas::from_grid(
-                        texture_handle,
-                        Vec2::new(PLAYER2_DEAD_SPRITE.width, PLAYER2_DEAD_SPRITE.height),
-                        PLAYER2_DEAD_SPRITE.columns,
-                        PLAYER2_DEAD_SPRITE.rows,
-                        None,
-                        None,
-                    );
-                    texture_atlases.add(texture_atlas)
-                }
+                Player::One => game_textures.player_one_dead.clone(),
+                Player::Two => game_textures.player_two_dead.clone(),
             };
 
             for enemy_transform in enemy_query.iter() {

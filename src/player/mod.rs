@@ -79,11 +79,9 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(InputManagerPlugin::<ControlAction>::default())
             .configure_set(PlayerSystemSet.run_if(in_state(GameState::Playing)))
-            // .add_startup_systems((setup_system, player_spawn_system).chain())
-            .add_startup_system(player_spawn_system)
+            .add_startup_system(player_spawn_system.in_base_set(StartupSet::PostStartup))
             .add_systems(
                 (
-                    // player_spawn_system,
                     player_movement_system,
                     player_confinement_system,
                     player_fire_system,

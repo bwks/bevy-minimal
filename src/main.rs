@@ -9,7 +9,7 @@ pub mod world;
 use bevy::prelude::*;
 use bevy::window::WindowMode;
 
-use crate::common::get_game_texture;
+use crate::common::get_texture_atlas;
 use crate::common::resources::GameTextures;
 
 use enemy::EnemyPlugin;
@@ -27,19 +27,19 @@ pub fn setup_system(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
-    let player1_texture_atlas = get_game_texture(PLAYER1_SPRITE, &asset_server);
+    let player1_texture_atlas = get_texture_atlas(PLAYER1_SPRITE, &asset_server);
     let player1_texture_handle = texture_atlases.add(player1_texture_atlas);
 
-    let player2_texture_atlas = get_game_texture(PLAYER2_SPRITE, &asset_server);
+    let player2_texture_atlas = get_texture_atlas(PLAYER2_SPRITE, &asset_server);
     let player2_texture_handle = texture_atlases.add(player2_texture_atlas);
 
-    let player1_dead_texture_atlas = get_game_texture(PLAYER1_DEAD_SPRITE, &asset_server);
+    let player1_dead_texture_atlas = get_texture_atlas(PLAYER1_DEAD_SPRITE, &asset_server);
     let player1_dead_texture_handle = texture_atlases.add(player1_dead_texture_atlas);
 
-    let player2_dead_texture_atlas = get_game_texture(PLAYER2_DEAD_SPRITE, &asset_server);
+    let player2_dead_texture_atlas = get_texture_atlas(PLAYER2_DEAD_SPRITE, &asset_server);
     let player2_dead_texture_handle = texture_atlases.add(player2_dead_texture_atlas);
 
-    let enemy1_texture_atlas = get_game_texture(ENEMY1_SPRITE, &asset_server);
+    let enemy1_texture_atlas = get_texture_atlas(ENEMY1_SPRITE, &asset_server);
     let enemy1_texture_handle = texture_atlases.add(enemy1_texture_atlas);
 
     let game_textures = GameTextures {

@@ -27,35 +27,10 @@ use crate::common::{BASE_SPEED, TIME_STEP};
 
 pub fn player_spawn_system(
     mut commands: Commands,
-    // controller_query: Query<&ActionState<ControlAction>>,
-    asset_server: Res<AssetServer>,
     game_textures: Res<GameTextures>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
     let window = window_query.get_single().unwrap();
-
-    // let texture_handle_p1 = asset_server.load(PLAYER1_SPRITE.file);
-    // let texture_atlas_p1 = TextureAtlas::from_grid(
-    //     texture_handle_p1,
-    //     Vec2::new(PLAYER1_SPRITE.width, PLAYER1_SPRITE.height),
-    //     PLAYER1_SPRITE.columns,
-    //     PLAYER1_SPRITE.rows,
-    //     None,
-    //     None,
-    // );
-    // let texture_atlas_handle_p1 = texture_atlases.add(texture_atlas_p1);
-
-    let texture_handle_p2 = asset_server.load(PLAYER2_SPRITE.file);
-    let texture_atlas_p2 = TextureAtlas::from_grid(
-        texture_handle_p2,
-        Vec2::new(PLAYER2_SPRITE.width, PLAYER2_SPRITE.height),
-        PLAYER2_SPRITE.columns,
-        PLAYER2_SPRITE.rows,
-        None,
-        None,
-    );
-    let texture_atlas_handle_p2 = texture_atlases.add(texture_atlas_p2);
 
     // Use only the subset of sprites in the sheet that make up the run animation
     let animation_indices = AnimationIndices { first: 8, last: 11 };
@@ -94,7 +69,7 @@ pub fn player_spawn_system(
             },
         },
         SpriteSheetBundle {
-            texture_atlas: texture_atlas_handle_p2.clone(),
+            texture_atlas: game_textures.player_two.clone(),
             sprite: TextureAtlasSprite::new(animation_indices.first),
             transform: Transform {
                 translation: Vec3::new(-window.width() / 4.0 + 50.0, 10.0, 10.0),
@@ -123,8 +98,7 @@ pub fn player_respawn_system(
         With<Playable>,
     >,
     keyboard_input: Res<Input<KeyCode>>,
-    asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    game_textures: Res<GameTextures>,
 ) {
     for (player, mut player_state, player_lives, controller_input, mut sprite_handle) in
         player_query.iter_mut()
@@ -134,30 +108,8 @@ pub fn player_respawn_system(
                 || controller_input.just_pressed(ControlAction::Restart)
             {
                 let player_sprite_atlas = match player {
-                    Player::One => {
-                        let texture_handle = asset_server.load(PLAYER1_SPRITE.file);
-                        let texture_atlas = TextureAtlas::from_grid(
-                            texture_handle,
-                            Vec2::new(PLAYER1_SPRITE.width, PLAYER1_SPRITE.height),
-                            PLAYER1_SPRITE.columns,
-                            PLAYER1_SPRITE.rows,
-                            None,
-                            None,
-                        );
-                        texture_atlases.add(texture_atlas)
-                    }
-                    Player::Two => {
-                        let texture_handle = asset_server.load(PLAYER2_SPRITE.file);
-                        let texture_atlas = TextureAtlas::from_grid(
-                            texture_handle,
-                            Vec2::new(PLAYER2_SPRITE.width, PLAYER2_SPRITE.height),
-                            PLAYER2_SPRITE.columns,
-                            PLAYER2_SPRITE.rows,
-                            None,
-                            None,
-                        );
-                        texture_atlases.add(texture_atlas)
-                    }
+                    Player::One => game_textures.player_one.clone(),
+                    Player::Two => game_textures.player_two.clone(),
                 };
                 *player_state = PlayerState::Alive;
                 *sprite_handle = player_sprite_atlas;
@@ -170,6 +122,7 @@ pub fn player_fire_system(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     player_query: Query<(&Transform, &ActionState<ControlAction>, &PlayerState), With<Playable>>,
+    _game_textures: Res<GameTextures>,
     audio: Res<Audio>,
 ) {
     for (player_transform, player_fire_action, player_state) in player_query.iter() {

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct GameTextures {
     pub player_one: Handle<TextureAtlas>,
     pub player_two: Handle<TextureAtlas>,

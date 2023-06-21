@@ -16,7 +16,7 @@ pub struct SpriteSheet<'a> {
     pub rows: usize,
 }
 
-pub fn get_game_texture(sprite: SpriteSheet, asset_server: &Res<AssetServer>) -> TextureAtlas {
+pub fn get_texture_atlas(sprite: SpriteSheet, asset_server: &Res<AssetServer>) -> TextureAtlas {
     let texture_handle = asset_server.load(sprite.file);
     let texture_atlas = TextureAtlas::from_grid(
         texture_handle,
