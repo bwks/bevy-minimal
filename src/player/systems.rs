@@ -10,6 +10,7 @@ use leafwing_input_manager::InputManagerBundle;
 use crate::common::components::{AnimationIndices, AnimationTimer, Vitality};
 use crate::common::resources::GameTextures;
 use crate::common::{SCROLL_X_VELOCITY, SCROLL_Y_VELOCITY};
+use crate::game::states::GameState;
 use crate::player::actions::ControlAction;
 use crate::player::bundles::PlayerBundle;
 use crate::player::components::{
@@ -121,6 +122,32 @@ pub fn player_respawn_system(
             }
         }
     }
+}
+
+pub fn players_dead_system(
+    player_query: Query<(&Vitality, &Lives), With<Playable>>,
+    // game_state: Res<State<GameState>>,
+    mut next_app_state: ResMut<NextState<GameState>>,
+) {
+    let mut deadcount = 0;
+
+    for (player_vitality, player_lives) in player_query.iter() {
+        if *player_vitality == Vitality::Dead && player_lives.count == 0 {
+            deadcount += 1;
+        }
+    }
+
+    if deadcount == 2 {
+        next_app_state.set(GameState::Paused);
+    }
+    // match game_state.0 {
+    //     GameState::Playing => {
+    //         next_app_state.set(GameState::Paused);
+    //     }
+    //     GameState::Paused => {
+    //         next_app_state.set(GameState::Playing);
+    //     }
+    // }
 }
 
 pub fn player_fire_system(
