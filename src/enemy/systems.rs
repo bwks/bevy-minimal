@@ -4,7 +4,7 @@ use rand::Rng;
 
 use crate::enemy::components::{Enemy, EnemyDead, EnemyDeadTimer, EnemyDeadToSpawn};
 use crate::enemy::resources::EnemySpawnTimer;
-use crate::enemy::{ENEMY1_SPRITE, ENEMY_SIZE, NUMBER_OF_ENEMIES};
+use crate::enemy::{ENEMY1_SPRITE, NUMBER_OF_ENEMIES};
 use crate::game::states::GameState;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
@@ -16,7 +16,7 @@ use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
 
 use crate::common::components::{AnimationIndices, AnimationTimer, Movable, Velocity};
 use crate::common::resources::GameTextures;
-use crate::common::{BASE_SPEED, TIME_STEP};
+use crate::common::{BASE_SPEED, SCROLL_X_VELOCITY, SCROLL_Y_VELOCITY, TIME_STEP};
 
 pub fn enemy_spawn_system(
     mut commands: Commands,
@@ -202,7 +202,7 @@ pub fn enemy_hit_player_system(
                     .translation
                     .distance(enemy_transform.translation);
                 let player_radius = PLAYER_SIZE.0 / 2.0;
-                let enemy_radius = ENEMY_SIZE.0 / 2.0;
+                let enemy_radius = ENEMY1_SPRITE.width / 2.0;
                 if distance < player_radius + enemy_radius {
                     *player_state = PlayerState::Dead;
                     player_lives.count -= 1;
@@ -237,7 +237,10 @@ pub fn enemy_dead_spawn_system(
             EnemyDead,
             EnemyDeadTimer::default(),
             Movable { auto_despawn: true },
-            Velocity { x: 0.01, y: 0.01 },
+            Velocity {
+                x: SCROLL_X_VELOCITY,
+                y: SCROLL_Y_VELOCITY,
+            },
         ));
 
         // despawn the EnemyDeadToSpawn

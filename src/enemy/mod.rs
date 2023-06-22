@@ -32,13 +32,6 @@ pub const ENEMY1_DEAD_SPRITE: SpriteSheet = SpriteSheet {
 };
 
 pub const ENEMY_SPAWN_TIME: f32 = 2.0;
-// pub const ENEMY_SPRITE: &str = "zombie.png";
-// pub const ENEMY_SPRITE: &str = "ZombieToast.png";
-// pub const ENEMY1_SPRITE: &str = "zombie-man-walk-96px.png";
-pub const ENEMY_SPRITE_2: &str = "zombie-woman-walk-96px.png";
-pub const ENEMY_SPRITE_3: &str = "zombie-wild-walk-96px.png";
-pub const ENEMY_SIZE: (f32, f32) = (48.0, 92.0); // (x, y)
-pub const ENEMY_SCALE: f32 = 1.0;
 pub const NUMBER_OF_ENEMIES: u8 = 10;
 
 #[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]

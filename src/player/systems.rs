@@ -18,8 +18,7 @@ use crate::player::{
 };
 
 use crate::enemy::components::{Enemy, EnemyDeadToSpawn};
-use crate::enemy::ENEMY_SIZE;
-
+use crate::enemy::ENEMY1_SPRITE;
 use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
 
 use crate::common::components::{Movable, Velocity};
@@ -310,7 +309,7 @@ pub fn player_fireball_hit_enemy_system(
                     PLAYER_FIREBALL_SIZE.1 * PLAYER_FIREBALL_SCALE,
                 ),
                 enemy_transform.translation,
-                Vec2::new(ENEMY_SIZE.0, ENEMY_SIZE.1),
+                Vec2::new(ENEMY1_SPRITE.width, ENEMY1_SPRITE.height),
             );
 
             // if enemy has entered the screen

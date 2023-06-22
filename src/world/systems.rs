@@ -3,7 +3,7 @@ use bevy::window::PrimaryWindow;
 use rand::Rng;
 
 use crate::common::components::{Movable, Velocity};
-use crate::common::{BASE_SPEED, TIME_STEP};
+use crate::common::{BASE_SPEED, SCROLL_X_VELOCITY, SCROLL_Y_VELOCITY, TIME_STEP};
 use crate::world::components::Tree;
 use crate::world::resources::TreeSpawnTimer;
 use crate::world::{NUMBER_OF_TREES, TREE_SCALE, TREE_SPRITE};
@@ -43,7 +43,10 @@ pub fn tree_spawn_system_init(
             },
             Tree {},
             Movable { auto_despawn: true },
-            Velocity { x: 0.01, y: 0.01 },
+            Velocity {
+                x: SCROLL_X_VELOCITY,
+                y: SCROLL_Y_VELOCITY,
+            },
         ));
     }
 }
@@ -83,7 +86,10 @@ pub fn tree_spawn_system(
             },
             Tree {},
             Movable { auto_despawn: true },
-            Velocity { x: 0.01, y: 0.01 },
+            Velocity {
+                x: SCROLL_X_VELOCITY,
+                y: SCROLL_Y_VELOCITY,
+            },
         ));
     }
 }
