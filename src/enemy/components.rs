@@ -14,6 +14,6 @@ pub struct EnemyDeadTimer(pub Timer);
 
 impl Default for EnemyDeadTimer {
     fn default() -> Self {
-        Self(Timer::from_seconds(0.05, TimerMode::Repeating))
+        Self(Timer::from_seconds(0.07, TimerMode::Repeating))
     }
 }

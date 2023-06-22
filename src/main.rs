@@ -16,8 +16,8 @@ use enemy::EnemyPlugin;
 use enemy::{ENEMY1_DEAD_SPRITE, ENEMY1_SPRITE};
 use game::GamePlugin;
 use player::{
-    PlayerPlugin, EXPLOSION_SPRITE, PLAYER1_DEAD_SPRITE, PLAYER1_SPRITE, PLAYER2_DEAD_SPRITE,
-    PLAYER2_SPRITE,
+    PlayerPlugin, EXPLOSION_SPRITE, PLAYER1_DEAD_SPRITE, PLAYER1_GHOST_SPRITE, PLAYER1_SPRITE,
+    PLAYER2_GHOST_SPRITE, PLAYER2_SPRITE,
 };
 
 use score::ScorePlugin;
@@ -37,8 +37,11 @@ pub fn setup_system(
     let player1_dead_texture_atlas = get_texture_atlas(PLAYER1_DEAD_SPRITE, &asset_server);
     let player1_dead_texture_handle = texture_atlases.add(player1_dead_texture_atlas);
 
-    let player2_dead_texture_atlas = get_texture_atlas(PLAYER2_DEAD_SPRITE, &asset_server);
-    let player2_dead_texture_handle = texture_atlases.add(player2_dead_texture_atlas);
+    let player1_ghost_texture_atlas = get_texture_atlas(PLAYER1_GHOST_SPRITE, &asset_server);
+    let player1_ghost_texture_handle = texture_atlases.add(player1_ghost_texture_atlas);
+
+    let player2_ghost_texture_atlas = get_texture_atlas(PLAYER2_GHOST_SPRITE, &asset_server);
+    let player2_ghost_texture_handle = texture_atlases.add(player2_ghost_texture_atlas);
 
     let enemy1_texture_atlas = get_texture_atlas(ENEMY1_SPRITE, &asset_server);
     let enemy1_texture_handle = texture_atlases.add(enemy1_texture_atlas);
@@ -52,8 +55,10 @@ pub fn setup_system(
     let game_textures = GameTextures {
         player_one: player1_texture_handle,
         player_two: player2_texture_handle,
-        player_one_dead: player1_dead_texture_handle,
-        player_two_dead: player2_dead_texture_handle,
+        player_one_dead: player1_dead_texture_handle.clone(),
+        player_two_dead: player1_dead_texture_handle.clone(),
+        player_one_ghost: player1_ghost_texture_handle,
+        player_two_ghost: player2_ghost_texture_handle,
         player_fireball: asset_server.load("fireball-right.png"),
         enemy_zombie: enemy1_texture_handle,
         enemy_zombie_dead: enemy1_dead_texture_handle,

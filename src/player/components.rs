@@ -1,15 +1,9 @@
-use bevy::prelude::Component;
+use bevy::prelude::*;
 
 #[derive(Component, Clone, Debug)]
 pub enum Player {
     One,
     Two,
-}
-
-#[derive(Component, Debug, PartialEq, Eq)]
-pub enum PlayerState {
-    Alive,
-    Dead,
 }
 
 #[derive(Component)]
@@ -28,3 +22,18 @@ pub struct Playable;
 
 #[derive(Component)]
 pub struct Fireball;
+
+#[derive(Component)]
+pub struct PlayerDead;
+
+#[derive(Component)]
+pub struct PlayerDeadToSpawn(pub Vec3);
+
+#[derive(Component)]
+pub struct PlayerDeadTimer(pub Timer);
+
+impl Default for PlayerDeadTimer {
+    fn default() -> Self {
+        Self(Timer::from_seconds(0.1, TimerMode::Repeating))
+    }
+}

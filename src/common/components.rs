@@ -1,6 +1,12 @@
 use bevy::prelude::{Component, Deref, DerefMut};
 use bevy::time::Timer;
 
+#[derive(Component, Debug, PartialEq, Eq)]
+pub enum Vitality {
+    Alive,
+    Dead,
+}
+
 #[derive(Component)]
 pub struct Velocity {
     pub x: f32,

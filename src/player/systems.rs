@@ -7,11 +7,14 @@ use bevy::window::PrimaryWindow;
 use leafwing_input_manager::prelude::ActionState;
 use leafwing_input_manager::InputManagerBundle;
 
-use crate::common::components::{AnimationIndices, AnimationTimer};
+use crate::common::components::{AnimationIndices, AnimationTimer, Vitality};
 use crate::common::resources::GameTextures;
+use crate::common::{SCROLL_X_VELOCITY, SCROLL_Y_VELOCITY};
 use crate::player::actions::ControlAction;
 use crate::player::bundles::PlayerBundle;
-use crate::player::components::{Fireball, Lives, Playable, Player, PlayerState};
+use crate::player::components::{
+    Fireball, Lives, Playable, Player, PlayerDead, PlayerDeadTimer, PlayerDeadToSpawn,
+};
 use crate::player::{
     PLAYER1_SPRITE, PLAYER2_SPRITE, PLAYER_FIREBALL_SCALE, PLAYER_FIREBALL_SIZE,
     PLAYER_FIREBALL_SPRITE, PLAYER_SCALE, PLAYER_SIZE, PLAYER_SPEED,
@@ -32,7 +35,10 @@ pub fn player_spawn_system(
     let window = window_query.get_single().unwrap();
 
     // Use only the subset of sprites in the sheet that make up the run animation
-    let animation_indices = AnimationIndices { first: 8, last: 11 };
+    let animation_indices = AnimationIndices {
+        first: 10,
+        last: 13,
+    };
 
     commands.spawn((
         PlayerBundle {
@@ -44,7 +50,7 @@ pub fn player_spawn_system(
         },
         SpriteSheetBundle {
             texture_atlas: game_textures.player_one.clone(),
-            sprite: TextureAtlasSprite::new(animation_indices.first),
+            sprite: TextureAtlasSprite::new(11),
             transform: Transform {
                 translation: Vec3::new(-window.width() / 4.0, 0.0, 10.0),
                 scale: Vec3::splat(PLAYER1_SPRITE.scale),
@@ -54,7 +60,7 @@ pub fn player_spawn_system(
         },
         animation_indices,
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
-        PlayerState::Alive,
+        Vitality::Alive,
         Playable {},
         Lives::default(),
     ));
@@ -69,7 +75,7 @@ pub fn player_spawn_system(
         },
         SpriteSheetBundle {
             texture_atlas: game_textures.player_two.clone(),
-            sprite: TextureAtlasSprite::new(animation_indices.first),
+            sprite: TextureAtlasSprite::new(11),
             transform: Transform {
                 translation: Vec3::new(-window.width() / 4.0 + 50.0, 10.0, 10.0),
                 scale: Vec3::splat(PLAYER2_SPRITE.scale),
@@ -79,7 +85,7 @@ pub fn player_spawn_system(
         },
         animation_indices,
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
-        PlayerState::Alive,
+        Vitality::Alive,
         Playable {},
         Lives::default(),
     ));
@@ -89,7 +95,7 @@ pub fn player_respawn_system(
     mut player_query: Query<
         (
             &Player,
-            &mut PlayerState,
+            &mut Vitality,
             &Lives,
             &ActionState<ControlAction>,
             &mut Handle<TextureAtlas>,
@@ -102,7 +108,7 @@ pub fn player_respawn_system(
     for (player, mut player_state, player_lives, controller_input, mut sprite_handle) in
         player_query.iter_mut()
     {
-        if *player_state == PlayerState::Dead && player_lives.count > 0 {
+        if *player_state == Vitality::Dead && player_lives.count > 0 {
             if keyboard_input.just_pressed(KeyCode::F1)
                 || controller_input.just_pressed(ControlAction::Restart)
             {
@@ -110,7 +116,7 @@ pub fn player_respawn_system(
                     Player::One => game_textures.player_one.clone(),
                     Player::Two => game_textures.player_two.clone(),
                 };
-                *player_state = PlayerState::Alive;
+                *player_state = Vitality::Alive;
                 *sprite_handle = player_sprite_atlas;
             }
         }
@@ -120,13 +126,12 @@ pub fn player_respawn_system(
 pub fn player_fire_system(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    player_query: Query<(&Transform, &ActionState<ControlAction>, &PlayerState), With<Playable>>,
+    player_query: Query<(&Transform, &ActionState<ControlAction>, &Vitality), With<Playable>>,
     _game_textures: Res<GameTextures>,
     audio: Res<Audio>,
 ) {
     for (player_transform, player_fire_action, player_state) in player_query.iter() {
-        if *player_state == PlayerState::Alive
-            && player_fire_action.just_pressed(ControlAction::Fire)
+        if *player_state == Vitality::Alive && player_fire_action.just_pressed(ControlAction::Fire)
         {
             let (player_x, player_y) = (
                 player_transform.translation.x,
@@ -205,14 +210,14 @@ pub fn player_movement_system(
             direction = direction.normalize();
             timer.tick(time.delta());
             if timer.just_finished() {
-                sprite.index = if sprite.index < indices.first || sprite.index == indices.last {
-                    8
+                if sprite.index < indices.first || sprite.index == indices.last {
+                    sprite.index = 10;
                 } else {
-                    sprite.index + 1
+                    sprite.index += 1;
                 };
             }
         } else {
-            sprite.index = 0;
+            sprite.index = 11;
         }
 
         player_transform.translation += direction * PLAYER_SPEED * time.delta_seconds();
@@ -339,6 +344,78 @@ pub fn player_fireball_hit_enemy_system(
 
                     break;
                 }
+            }
+        }
+    }
+}
+
+pub fn player_dead_spawn_system(
+    mut commands: Commands,
+    game_textures: Res<GameTextures>,
+    enemy_query: Query<(Entity, &PlayerDeadToSpawn)>,
+) {
+    for (player_dead_entity, player_dead_location) in enemy_query.iter() {
+        // spawn the dead enemy sprite
+        commands.spawn((
+            SpriteSheetBundle {
+                texture_atlas: game_textures.player_one_dead.clone(),
+                sprite: TextureAtlasSprite::new(11),
+                transform: Transform {
+                    translation: player_dead_location.0,
+                    scale: Vec3::splat(3.0),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            PlayerDead,
+            PlayerDeadTimer::default(),
+            Movable { auto_despawn: true },
+            Velocity {
+                x: SCROLL_X_VELOCITY,
+                y: SCROLL_Y_VELOCITY,
+            },
+        ));
+
+        // despawn the PlayerDeadToSpawn
+        commands.entity(player_dead_entity).despawn();
+    }
+}
+
+pub fn player_dead_animation_system(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut player_query: Query<
+        (
+            Entity,
+            &mut PlayerDeadTimer,
+            &mut TextureAtlasSprite,
+            &Velocity,
+            &mut Transform,
+            &Movable,
+        ),
+        With<PlayerDead>,
+    >,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+) {
+    let window = window_query.get_single().unwrap();
+
+    for (dead_player_entity, mut timer, mut sprite, velocity, mut player_transform, movable) in
+        player_query.iter_mut()
+    {
+        if sprite.index < 13 {
+            timer.0.tick(time.delta());
+            if timer.0.finished() {
+                sprite.index += 1;
+            }
+        }
+        let player_translation = &mut player_transform.translation;
+        player_translation.x -= velocity.x * TIME_STEP * BASE_SPEED / 2.0 + 1.0;
+
+        if movable.auto_despawn {
+            // despawn when out of screen
+            let window_margin = -window.width() / 2.0 - 20.0;
+            if player_translation.x < window_margin {
+                commands.entity(dead_player_entity).despawn();
             }
         }
     }
