@@ -8,5 +8,6 @@ pub struct GameTextures {
     pub player_two_dead: Handle<TextureAtlas>,
     pub player_fireball: Handle<Image>,
     pub enemy_zombie: Handle<TextureAtlas>,
+    pub enemy_zombie_dead: Handle<TextureAtlas>,
     pub explosion: Handle<TextureAtlas>,
 }

@@ -17,7 +17,7 @@ use crate::player::{
     PLAYER_FIREBALL_SPRITE, PLAYER_SCALE, PLAYER_SIZE, PLAYER_SPEED,
 };
 
-use crate::enemy::components::Enemy;
+use crate::enemy::components::{Enemy, EnemyDeadToSpawn};
 use crate::enemy::ENEMY_SIZE;
 
 use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
@@ -278,20 +278,11 @@ pub fn fireball_movement_system(
 pub fn player_fireball_hit_enemy_system(
     mut commands: Commands,
     fireball_query: Query<(Entity, &Transform), With<Fireball>>,
-    mut enemy_query: Query<
-        (
-            Entity,
-            &Transform,
-            // &mut Handle<TextureAtlas>,
-            // &mut AnimationIndices,
-        ),
-        With<Enemy>,
-    >,
+    mut enemy_query: Query<(Entity, &Transform), With<Enemy>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     mut player_one_score: ResMut<PlayerOneScore>,
-    // asset_server: Res<AssetServer>,
-    // mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
+    // game_textures: Res<GameTextures>,
     audio: Res<Audio>,
 ) {
     let window = window_query.get_single().unwrap();
@@ -302,7 +293,6 @@ pub fn player_fireball_hit_enemy_system(
     // iterate through the lasers
     for (fireball_entity, fireball_transform) in fireball_query.iter() {
         // iterate through the enemies
-        // for (enemy_entity, enemy_transform, mut sprite_handle, mut animation_indicies) in enemy_query.iter_mut()
         for (enemy_entity, enemy_transform) in enemy_query.iter_mut() {
             if despawned_entities.contains(&enemy_entity)
                 || despawned_entities.contains(&fireball_entity)
@@ -329,20 +319,6 @@ pub fn player_fireball_hit_enemy_system(
                 if collision.is_some() {
                     // remove the enemy
 
-                    // let texture_handle = asset_server.load(EPLOSION_SPRITE.file);
-                    // let texture_atlas = TextureAtlas::from_grid(
-                    //     texture_handle,
-                    //     Vec2::new(EPLOSION_SPRITE.width, EPLOSION_SPRITE.height),
-                    //     EPLOSION_SPRITE.columns,
-                    //     EPLOSION_SPRITE.rows,
-                    //     None,
-                    //     None,
-                    // );
-
-                    // let enemy_dead_sprite_atlas = texture_atlases.add(texture_atlas);
-                    // *animation_indicies = AnimationIndices { first: 0, last: 5 };
-                    // *sprite_handle = enemy_dead_sprite_atlas;
-
                     let zombie_die_sound = asset_server.load("zombie-die.ogg");
                     audio.play(zombie_die_sound);
 
@@ -352,6 +328,12 @@ pub fn player_fireball_hit_enemy_system(
                     // remove the laser
                     commands.entity(fireball_entity).despawn();
                     despawned_entities.insert(fireball_entity);
+
+                    commands.spawn(EnemyDeadToSpawn(Vec3::new(
+                        enemy_transform.translation.x,
+                        enemy_transform.translation.y,
+                        0.0,
+                    )));
 
                     // update score
                     player_one_score.value += 1;

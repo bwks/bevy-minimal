@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use rand::Rng;
 
-use crate::enemy::components::Enemy;
+use crate::enemy::components::{Enemy, EnemyDead, EnemyDeadTimer, EnemyDeadToSpawn};
 use crate::enemy::resources::EnemySpawnTimer;
 use crate::enemy::{ENEMY1_SPRITE, ENEMY_SIZE, NUMBER_OF_ENEMIES};
 use crate::game::states::GameState;
@@ -10,7 +10,7 @@ use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
 use crate::player::components::{Lives, Playable, Player, PlayerState};
-use crate::player::{PLAYER1_DEAD_SPRITE, PLAYER2_DEAD_SPRITE, PLAYER_SIZE};
+use crate::player::PLAYER_SIZE;
 
 use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
 
@@ -21,8 +21,7 @@ use crate::common::{BASE_SPEED, TIME_STEP};
 pub fn enemy_spawn_system(
     mut commands: Commands,
     window_query: Query<&Window, With<PrimaryWindow>>,
-    asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    game_textures: Res<GameTextures>,
 ) {
     let window = window_query.get_single().unwrap();
 
@@ -34,17 +33,6 @@ pub fn enemy_spawn_system(
     for _ in 0..NUMBER_OF_ENEMIES {
         let mut rng = rand::thread_rng();
 
-        let texture_handle = asset_server.load(ENEMY1_SPRITE.file);
-        let texture_atlas = TextureAtlas::from_grid(
-            texture_handle,
-            Vec2::new(ENEMY1_SPRITE.width, ENEMY1_SPRITE.height),
-            ENEMY1_SPRITE.columns,
-            ENEMY1_SPRITE.rows,
-            None,
-            None,
-        );
-        let texture_atlas_handle = texture_atlases.add(texture_atlas);
-        // Use only the subset of sprites in the sheet that make up the run animation
         let animation_indices = AnimationIndices {
             first: 33,
             last: 42,
@@ -57,7 +45,7 @@ pub fn enemy_spawn_system(
 
         commands.spawn((
             SpriteSheetBundle {
-                texture_atlas: texture_atlas_handle.clone(),
+                texture_atlas: game_textures.enemy_zombie.clone(),
                 sprite: TextureAtlasSprite::new(animation_indices.first),
                 // transform: Transform::from_scale(Vec3::splat(3.0)),
                 transform: Transform {
@@ -83,12 +71,11 @@ pub fn enemy_spawn_system(
 pub fn respawn_enemy_system(
     commands: Commands,
     keyboard_input: Res<Input<KeyCode>>,
-    asset_server: Res<AssetServer>,
     window_query: Query<&Window, With<PrimaryWindow>>,
-    texture_atlases: ResMut<Assets<TextureAtlas>>,
+    game_textures: Res<GameTextures>,
 ) {
     if keyboard_input.just_pressed(KeyCode::F1) {
-        enemy_spawn_system(commands, window_query, asset_server, texture_atlases)
+        enemy_spawn_system(commands, window_query, game_textures)
     }
 }
 
@@ -102,12 +89,11 @@ pub fn enemy_spawn_timer_tick_system(
 pub fn enemies_spawn_over_time_system(
     commands: Commands,
     window_query: Query<&Window, With<PrimaryWindow>>,
-    asset_server: Res<AssetServer>,
     enemy_spawn_timer: Res<EnemySpawnTimer>,
-    texture_atlases: ResMut<Assets<TextureAtlas>>,
+    game_textures: Res<GameTextures>,
 ) {
     if enemy_spawn_timer.timer.finished() {
-        enemy_spawn_system(commands, window_query, asset_server, texture_atlases)
+        enemy_spawn_system(commands, window_query, game_textures)
     }
 }
 
@@ -225,6 +211,76 @@ pub fn enemy_hit_player_system(
                     audio.play(dead_sound);
                     break;
                 }
+            }
+        }
+    }
+}
+
+pub fn enemy_dead_spawn_system(
+    mut commands: Commands,
+    game_textures: Res<GameTextures>,
+    query: Query<(Entity, &EnemyDeadToSpawn)>,
+) {
+    for (explosion_spawn_entity, explosion_to_spawn) in query.iter() {
+        // spawn the explosion sprite
+        commands.spawn((
+            SpriteSheetBundle {
+                texture_atlas: game_textures.enemy_zombie_dead.clone(),
+                sprite: TextureAtlasSprite::new(24),
+                transform: Transform {
+                    translation: explosion_to_spawn.0,
+                    scale: Vec3::splat(3.0),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            EnemyDead,
+            EnemyDeadTimer::default(),
+            Movable { auto_despawn: true },
+            Velocity { x: 0.01, y: 0.01 },
+        ));
+
+        // despawn the EnemyDeadToSpawn
+        commands.entity(explosion_spawn_entity).despawn();
+    }
+}
+
+pub fn enemy_dead_animation_system(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut query: Query<
+        (
+            Entity,
+            &mut EnemyDeadTimer,
+            &mut TextureAtlasSprite,
+            &Velocity,
+            &mut Transform,
+            &Movable,
+        ),
+        With<EnemyDead>,
+    >,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+) {
+    let window = window_query.get_single().unwrap();
+
+    for (entity, mut timer, mut sprite, velocity, mut enemy_transform, movable) in query.iter_mut()
+    {
+        timer.0.tick(time.delta());
+        if timer.0.finished() {
+            sprite.index += 1; // move to next sprite cell
+            if sprite.index >= 30 {
+                sprite.index = 30;
+                // commands.entity(entity).despawn()
+            }
+        }
+        let enemy_translation = &mut enemy_transform.translation;
+        enemy_translation.x -= velocity.x * TIME_STEP * BASE_SPEED / 2.0 + 1.0;
+
+        if movable.auto_despawn {
+            // despawn when out of screen
+            let window_margin = -window.width() / 2.0 - 20.0;
+            if enemy_translation.x < window_margin {
+                commands.entity(entity).despawn();
             }
         }
     }

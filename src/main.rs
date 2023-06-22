@@ -9,14 +9,15 @@ pub mod world;
 use bevy::prelude::*;
 use bevy::window::WindowMode;
 
-use crate::common::get_texture_atlas;
 use crate::common::resources::GameTextures;
+use crate::common::utils::get_texture_atlas;
 
 use enemy::EnemyPlugin;
-use enemy::ENEMY1_SPRITE;
+use enemy::{ENEMY1_DEAD_SPRITE, ENEMY1_SPRITE};
 use game::GamePlugin;
 use player::{
-    PlayerPlugin, PLAYER1_DEAD_SPRITE, PLAYER1_SPRITE, PLAYER2_DEAD_SPRITE, PLAYER2_SPRITE,
+    PlayerPlugin, EXPLOSION_SPRITE, PLAYER1_DEAD_SPRITE, PLAYER1_SPRITE, PLAYER2_DEAD_SPRITE,
+    PLAYER2_SPRITE,
 };
 
 use score::ScorePlugin;
@@ -42,6 +43,12 @@ pub fn setup_system(
     let enemy1_texture_atlas = get_texture_atlas(ENEMY1_SPRITE, &asset_server);
     let enemy1_texture_handle = texture_atlases.add(enemy1_texture_atlas);
 
+    let enemy1_dead_texture_atlas = get_texture_atlas(ENEMY1_DEAD_SPRITE, &asset_server);
+    let enemy1_dead_texture_handle = texture_atlases.add(enemy1_dead_texture_atlas);
+
+    let explosion_texture_atlas = get_texture_atlas(EXPLOSION_SPRITE, &asset_server);
+    let explosion_texture_handle = texture_atlases.add(explosion_texture_atlas);
+
     let game_textures = GameTextures {
         player_one: player1_texture_handle,
         player_two: player2_texture_handle,
@@ -49,7 +56,8 @@ pub fn setup_system(
         player_two_dead: player2_dead_texture_handle,
         player_fireball: asset_server.load("fireball-right.png"),
         enemy_zombie: enemy1_texture_handle,
-        explosion: asset_server.load("explosion.png"),
+        enemy_zombie_dead: enemy1_dead_texture_handle,
+        explosion: explosion_texture_handle,
     };
     commands.insert_resource(game_textures);
 }

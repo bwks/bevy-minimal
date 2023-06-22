@@ -14,7 +14,6 @@ use crate::player::systems::{
     player_fireball_hit_enemy_system, player_movement_system, player_respawn_system,
     player_spawn_system,
 };
-use crate::setup_system;
 
 pub const PLAYER1_SPRITE: SpriteSheet = SpriteSheet {
     file: "player1.png",
