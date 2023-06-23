@@ -2,9 +2,11 @@ use std::collections::HashSet;
 
 use rand::Rng;
 
-use crate::enemy::components::{Enemy, EnemyDead, EnemyDeadTimer, EnemyDeadToSpawn};
+use crate::enemy::components::{Enemy, EnemyDead, EnemyDeadTimer, EnemyDeadToSpawn, EnemyVariant};
 use crate::enemy::resources::EnemySpawnTimer;
-use crate::enemy::{ENEMY1_SPRITE, NUMBER_OF_ENEMIES};
+use crate::enemy::{
+    ENEMY1_DEAD_SPRITE, ENEMY1_SPRITE, ENEMY2_DEAD_SPRITE, ENEMY2_SPRITE, NUMBER_OF_ENEMIES,
+};
 use crate::game::states::GameState;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
@@ -33,9 +35,28 @@ pub fn enemy_spawn_system(
     for _ in 0..NUMBER_OF_ENEMIES {
         let mut rng = rand::thread_rng();
 
-        let animation_indices = AnimationIndices {
-            first: 33,
-            last: 42,
+        let flip = rng.gen_range(0.0..10.0);
+        let enemy_type = match flip > 5.0 {
+            true => EnemyVariant::Zombie,
+            false => EnemyVariant::Skelton,
+        };
+
+        let (enemy_sprite, enemy_texture, animation_indices, flip_x) = match enemy_type {
+            EnemyVariant::Zombie => (
+                ENEMY1_SPRITE,
+                game_textures.enemy_zombie.clone(),
+                AnimationIndices {
+                    first: 33,
+                    last: 42,
+                },
+                false,
+            ),
+            EnemyVariant::Skelton => (
+                ENEMY2_SPRITE,
+                game_textures.enemy_skeleton.clone(),
+                AnimationIndices { first: 0, last: 12 },
+                true,
+            ),
         };
 
         let animation_timer = Timer::from_seconds(10.0, TimerMode::Repeating);
@@ -45,20 +66,25 @@ pub fn enemy_spawn_system(
 
         commands.spawn((
             SpriteSheetBundle {
-                texture_atlas: game_textures.enemy_zombie.clone(),
+                texture_atlas: enemy_texture,
                 sprite: TextureAtlasSprite::new(animation_indices.first),
                 // transform: Transform::from_scale(Vec3::splat(3.0)),
                 transform: Transform {
                     translation: Vec3::new(random_width, random_height, 10.0),
-                    // rotation: Quat::from_rotation_y(std::f32::consts::PI),
-                    scale: Vec3::splat(ENEMY1_SPRITE.scale),
+                    rotation: if flip_x {
+                        Quat::from_rotation_y(std::f32::consts::PI)
+                    } else {
+                        Quat::IDENTITY
+                    },
+                    scale: Vec3::splat(enemy_sprite.scale),
                     ..Default::default()
                 },
                 ..Default::default()
             },
+            Enemy,
+            enemy_type,
             animation_indices,
             AnimationTimer(animation_timer.clone()),
-            Enemy {},
             Vitality::Alive,
             Movable { auto_despawn: true },
             Velocity {
@@ -100,7 +126,10 @@ pub fn enemies_spawn_over_time_system(
 
 pub fn enemy_movement_system(
     mut commands: Commands,
-    mut enemy_query: Query<(Entity, &Velocity, &mut Transform, &Movable), With<Enemy>>,
+    mut enemy_query: Query<
+        (Entity, &Velocity, &mut Transform, &Movable),
+        (With<Enemy>, Without<EnemyDead>),
+    >,
     player_query: Query<(&Transform, &Playable), Without<Enemy>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     mut player_one_score: ResMut<PlayerOneScore>,
@@ -179,7 +208,7 @@ pub fn enemy_hit_player_system(
         ),
         With<Playable>,
     >,
-    enemy_query: Query<&Transform, With<Enemy>>,
+    enemy_query: Query<(&Transform, &Vitality), (With<Enemy>, Without<Playable>)>,
     game_textures: Res<GameTextures>,
     // score: Res<Score>,
     asset_server: Res<AssetServer>,
@@ -189,16 +218,20 @@ pub fn enemy_hit_player_system(
         commands.insert_resource(NextState(Some(GameState::Paused)));
     }
 
-    for (player, mut player_vitality, mut player_lives, player_transform, mut sprite_handle) in
-        player_query.iter_mut()
-    {
-        if *player_vitality == Vitality::Alive {
-            let player_ghost_sprite_atlas = match player {
-                Player::One => game_textures.player_one_ghost.clone(),
-                Player::Two => game_textures.player_two_ghost.clone(),
-            };
+    for (enemy_transform, enemy_vitality) in enemy_query.iter() {
+        if enemy_vitality == &Vitality::Dead {
+            continue;
+        }
 
-            for enemy_transform in enemy_query.iter() {
+        for (player, mut player_vitality, mut player_lives, player_transform, mut sprite_handle) in
+            player_query.iter_mut()
+        {
+            if *player_vitality == Vitality::Alive {
+                let player_ghost_sprite_atlas = match player {
+                    Player::One => game_textures.player_one_ghost.clone(),
+                    Player::Two => game_textures.player_two_ghost.clone(),
+                };
+
                 let distance = player_transform
                     .translation
                     .distance(enemy_transform.translation);
@@ -227,23 +260,53 @@ pub fn enemy_hit_player_system(
 pub fn enemy_dead_spawn_system(
     mut commands: Commands,
     game_textures: Res<GameTextures>,
-    enemy_query: Query<(Entity, &EnemyDeadToSpawn)>,
+    enemy_query: Query<(Entity, &EnemyVariant, &EnemyDeadToSpawn), With<EnemyDead>>,
 ) {
-    for (enemy_dead_entity, enemy_dead_location) in enemy_query.iter() {
+    for (enemy_dead_entity, enemy_type, enemy_dead_location) in enemy_query.iter() {
         // spawn the dead enemy sprite
+
+        let (enemy_sprite, enemy_texture, dead_enemy_spawn_type, animation_indices, flip_x) =
+            match enemy_type {
+                EnemyVariant::Zombie => (
+                    ENEMY1_DEAD_SPRITE,
+                    game_textures.enemy_zombie_dead.clone(),
+                    EnemyVariant::Zombie,
+                    AnimationIndices {
+                        first: 24,
+                        last: 30,
+                    },
+                    false,
+                ),
+                EnemyVariant::Skelton => (
+                    ENEMY2_DEAD_SPRITE,
+                    game_textures.enemy_skeleton_dead.clone(),
+                    EnemyVariant::Skelton,
+                    AnimationIndices { first: 0, last: 14 },
+                    true,
+                ),
+            };
+
         commands.spawn((
             SpriteSheetBundle {
-                texture_atlas: game_textures.enemy_zombie_dead.clone(),
-                sprite: TextureAtlasSprite::new(24),
+                texture_atlas: enemy_texture,
+                sprite: TextureAtlasSprite::new(animation_indices.first),
                 transform: Transform {
                     translation: enemy_dead_location.0,
-                    scale: Vec3::splat(3.0),
+                    scale: Vec3::splat(enemy_sprite.scale),
+                    rotation: if flip_x {
+                        Quat::from_rotation_y(std::f32::consts::PI)
+                    } else {
+                        Quat::IDENTITY
+                    },
                     ..Default::default()
                 },
                 ..Default::default()
             },
+            dead_enemy_spawn_type,
+            Vitality::Dead,
             EnemyDead,
             EnemyDeadTimer::default(),
+            animation_indices,
             Movable { auto_despawn: true },
             Velocity {
                 x: SCROLL_X_VELOCITY,
@@ -264,6 +327,7 @@ pub fn enemy_dead_animation_system(
             Entity,
             &mut EnemyDeadTimer,
             &mut TextureAtlasSprite,
+            &AnimationIndices,
             &Velocity,
             &mut Transform,
             &Movable,
@@ -274,10 +338,17 @@ pub fn enemy_dead_animation_system(
 ) {
     let window = window_query.get_single().unwrap();
 
-    for (dead_enemy_entity, mut timer, mut sprite, velocity, mut enemy_transform, movable) in
-        enemy_query.iter_mut()
+    for (
+        dead_enemy_entity,
+        mut timer,
+        mut sprite,
+        animation_indicies,
+        velocity,
+        mut enemy_transform,
+        movable,
+    ) in enemy_query.iter_mut()
     {
-        if sprite.index < 30 {
+        if sprite.index < animation_indicies.last {
             timer.0.tick(time.delta());
             if timer.0.finished() {
                 sprite.index += 1;

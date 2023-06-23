@@ -31,6 +31,24 @@ pub const ENEMY1_DEAD_SPRITE: SpriteSheet = SpriteSheet {
     rows: 4,
 };
 
+pub const ENEMY2_SPRITE: SpriteSheet = SpriteSheet {
+    file: "skeleton-walk.png",
+    width: 22.0,
+    height: 33.0,
+    scale: 3.0,
+    columns: 13,
+    rows: 1,
+};
+
+pub const ENEMY2_DEAD_SPRITE: SpriteSheet = SpriteSheet {
+    file: "skeleton-dead.png",
+    width: 33.0,
+    height: 32.0,
+    scale: 3.0,
+    columns: 15,
+    rows: 1,
+};
+
 pub const ENEMY_SPAWN_TIME: f32 = 2.0;
 pub const NUMBER_OF_ENEMIES: u8 = 10;
 

@@ -70,13 +70,13 @@ pub const PLAYER1_DEAD_SPRITE: SpriteSheet = SpriteSheet {
     rows: 4,
 };
 
-pub const EXPLOSION_SPRITE: SpriteSheet = SpriteSheet {
-    file: "explosion.png",
+pub const BULLET_SPRITE: SpriteSheet = SpriteSheet {
+    file: "bullet.png",
     width: 32.0,
     height: 32.0,
-    scale: 10.0,
-    columns: 6,
-    rows: 1,
+    scale: 1.0,
+    columns: 5,
+    rows: 5,
 };
 
 pub const PLAYER_SPEED: f32 = 500.0;

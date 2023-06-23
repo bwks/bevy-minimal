@@ -116,14 +116,14 @@ pub fn tree_movement_system(
 ) {
     let window = window_query.get_single().unwrap();
 
-    for (tree_entity, velocity, mut enemy_transform, movable) in tree_query.iter_mut() {
-        let enemy_translation = &mut enemy_transform.translation;
-        enemy_translation.x -= velocity.x * TIME_STEP * BASE_SPEED / 2.0 + 1.0;
+    for (tree_entity, velocity, mut tree_transform, movable) in tree_query.iter_mut() {
+        let tree_translation = &mut tree_transform.translation;
+        tree_translation.x -= velocity.x * TIME_STEP * BASE_SPEED / 2.0 + 1.0;
 
         if movable.auto_despawn {
             // despawn when out of screen
             let window_margin = -window.width() / 2.0 - 20.0;
-            if enemy_translation.x < window_margin {
+            if tree_translation.x < window_margin {
                 commands.entity(tree_entity).despawn();
             }
         }

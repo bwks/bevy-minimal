@@ -13,10 +13,10 @@ use crate::common::resources::GameTextures;
 use crate::common::utils::get_texture_atlas;
 
 use enemy::EnemyPlugin;
-use enemy::{ENEMY1_DEAD_SPRITE, ENEMY1_SPRITE};
+use enemy::{ENEMY1_DEAD_SPRITE, ENEMY1_SPRITE, ENEMY2_DEAD_SPRITE, ENEMY2_SPRITE};
 use game::GamePlugin;
 use player::{
-    PlayerPlugin, EXPLOSION_SPRITE, PLAYER1_DEAD_SPRITE, PLAYER1_GHOST_SPRITE, PLAYER1_SPRITE,
+    PlayerPlugin, BULLET_SPRITE, PLAYER1_DEAD_SPRITE, PLAYER1_GHOST_SPRITE, PLAYER1_SPRITE,
     PLAYER2_GHOST_SPRITE, PLAYER2_SPRITE,
 };
 
@@ -43,14 +43,20 @@ pub fn setup_system(
     let player2_ghost_texture_atlas = get_texture_atlas(PLAYER2_GHOST_SPRITE, &asset_server);
     let player2_ghost_texture_handle = texture_atlases.add(player2_ghost_texture_atlas);
 
-    let enemy1_texture_atlas = get_texture_atlas(ENEMY1_SPRITE, &asset_server);
-    let enemy1_texture_handle = texture_atlases.add(enemy1_texture_atlas);
+    let enemy_zombie_texture_atlas = get_texture_atlas(ENEMY1_SPRITE, &asset_server);
+    let enemy_zombie_texture_handle = texture_atlases.add(enemy_zombie_texture_atlas);
 
-    let enemy1_dead_texture_atlas = get_texture_atlas(ENEMY1_DEAD_SPRITE, &asset_server);
-    let enemy1_dead_texture_handle = texture_atlases.add(enemy1_dead_texture_atlas);
+    let enemy_zombie_dead_texture_atlas = get_texture_atlas(ENEMY1_DEAD_SPRITE, &asset_server);
+    let enemy_zombie_dead_texture_handle = texture_atlases.add(enemy_zombie_dead_texture_atlas);
 
-    let explosion_texture_atlas = get_texture_atlas(EXPLOSION_SPRITE, &asset_server);
-    let explosion_texture_handle = texture_atlases.add(explosion_texture_atlas);
+    let enemy_skeleton_texture_atlas = get_texture_atlas(ENEMY2_SPRITE, &asset_server);
+    let enemy_skeleton_texture_handle = texture_atlases.add(enemy_skeleton_texture_atlas);
+
+    let enemy_skeleton_dead_texture_atlas = get_texture_atlas(ENEMY2_DEAD_SPRITE, &asset_server);
+    let enemy_skeleton_dead_texture_handle = texture_atlases.add(enemy_skeleton_dead_texture_atlas);
+
+    let bullet_texture_atlas = get_texture_atlas(BULLET_SPRITE, &asset_server);
+    let bullet_texture_handle = texture_atlases.add(bullet_texture_atlas);
 
     let game_textures = GameTextures {
         player_one: player1_texture_handle,
@@ -59,10 +65,11 @@ pub fn setup_system(
         player_two_dead: player1_dead_texture_handle.clone(),
         player_one_ghost: player1_ghost_texture_handle,
         player_two_ghost: player2_ghost_texture_handle,
-        player_fireball: asset_server.load("fireball-right.png"),
-        enemy_zombie: enemy1_texture_handle,
-        enemy_zombie_dead: enemy1_dead_texture_handle,
-        explosion: explosion_texture_handle,
+        enemy_zombie: enemy_zombie_texture_handle,
+        enemy_zombie_dead: enemy_zombie_dead_texture_handle,
+        enemy_skeleton: enemy_skeleton_texture_handle,
+        enemy_skeleton_dead: enemy_skeleton_dead_texture_handle,
+        bullet: bullet_texture_handle,
     };
     commands.insert_resource(game_textures);
 }

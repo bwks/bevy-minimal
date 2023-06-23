@@ -17,11 +17,11 @@ use crate::player::components::{
     Fireball, Lives, Playable, Player, PlayerDead, PlayerDeadTimer, PlayerDeadToSpawn,
 };
 use crate::player::{
-    PLAYER1_SPRITE, PLAYER2_SPRITE, PLAYER_FIREBALL_SCALE, PLAYER_FIREBALL_SIZE,
-    PLAYER_FIREBALL_SPRITE, PLAYER_SCALE, PLAYER_SIZE, PLAYER_SPEED,
+    PLAYER1_SPRITE, PLAYER2_SPRITE, PLAYER_FIREBALL_SCALE, PLAYER_FIREBALL_SIZE, PLAYER_SCALE,
+    PLAYER_SIZE, PLAYER_SPEED,
 };
 
-use crate::enemy::components::{Enemy, EnemyDeadToSpawn};
+use crate::enemy::components::{Enemy, EnemyDead, EnemyDeadToSpawn, EnemyVariant};
 use crate::enemy::ENEMY1_SPRITE;
 use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
 
@@ -140,21 +140,13 @@ pub fn players_dead_system(
     if deadcount == 2 {
         next_app_state.set(GameState::Paused);
     }
-    // match game_state.0 {
-    //     GameState::Playing => {
-    //         next_app_state.set(GameState::Paused);
-    //     }
-    //     GameState::Paused => {
-    //         next_app_state.set(GameState::Playing);
-    //     }
-    // }
 }
 
 pub fn player_fire_system(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     player_query: Query<(&Transform, &ActionState<ControlAction>, &Vitality), With<Playable>>,
-    _game_textures: Res<GameTextures>,
+    game_textures: Res<GameTextures>,
     audio: Res<Audio>,
 ) {
     for (player_transform, player_fire_action, player_state) in player_query.iter() {
@@ -167,11 +159,12 @@ pub fn player_fire_system(
             let x_offset = PLAYER_SIZE.0 / 2.0 * PLAYER_SCALE + 10.0;
 
             commands.spawn((
-                SpriteBundle {
-                    texture: asset_server.load(PLAYER_FIREBALL_SPRITE),
+                SpriteSheetBundle {
+                    texture_atlas: game_textures.bullet.clone(),
+                    sprite: TextureAtlasSprite::new(15),
                     transform: Transform {
-                        scale: Vec3::new(PLAYER_FIREBALL_SCALE, PLAYER_FIREBALL_SCALE, 1.0),
                         translation: Vec3::new(player_x + x_offset, player_y, 1.0),
+                        scale: Vec3::splat(3.0),
                         ..Default::default()
                     },
                     ..Default::default()
@@ -214,17 +207,11 @@ pub fn player_movement_system(
                     ControlAction::AxisMove => {
                         // Each action has a button-like state of its own that you can check
                         // We're working with gamepads, so we want to defensively ensure that we're using the clamped values
-                        if let Some(axis_pair) =
-                            player_move_action.clamped_axis_pair(ControlAction::AxisMove)
+
+                        if let Some(axis_move) =
+                            player_move_action.axis_pair(ControlAction::AxisMove)
                         {
-                            match axis_pair.x() > 0.0 {
-                                true => direction += Vec3::new(1.0, 0.0, 0.0), // move right
-                                false => direction += Vec3::new(-1.0, 0.0, 0.0), // move left
-                            }
-                            match axis_pair.y() > 0.0 {
-                                true => direction += Vec3::new(0.0, 1.0, 0.0),   // up
-                                false => direction += Vec3::new(0.0, -1.0, 0.0), // down
-                            }
+                            direction += Vec3::new(axis_move.x(), axis_move.y(), 0.0);
                         }
                     }
 
@@ -234,7 +221,7 @@ pub fn player_movement_system(
         }
 
         if direction.length() > 0.0 {
-            direction = direction.normalize();
+            // direction = direction.normalize();
             timer.tick(time.delta());
             if timer.just_finished() {
                 if sprite.index < indices.first || sprite.index == indices.last {
@@ -309,7 +296,7 @@ pub fn fireball_movement_system(
 pub fn player_fireball_hit_enemy_system(
     mut commands: Commands,
     fireball_query: Query<(Entity, &Transform), With<Fireball>>,
-    mut enemy_query: Query<(Entity, &Transform), With<Enemy>>,
+    mut enemy_query: Query<(Entity, &EnemyVariant, &Vitality, &Transform), Without<Playable>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     mut player_one_score: ResMut<PlayerOneScore>,
     asset_server: Res<AssetServer>,
@@ -324,9 +311,10 @@ pub fn player_fireball_hit_enemy_system(
     // iterate through the lasers
     for (fireball_entity, fireball_transform) in fireball_query.iter() {
         // iterate through the enemies
-        for (enemy_entity, enemy_transform) in enemy_query.iter_mut() {
+        for (enemy_entity, enemy_type, enemy_vitality, enemy_transform) in enemy_query.iter_mut() {
             if despawned_entities.contains(&enemy_entity)
                 || despawned_entities.contains(&fireball_entity)
+                || enemy_vitality == &Vitality::Dead
             {
                 continue;
             }
@@ -360,11 +348,20 @@ pub fn player_fireball_hit_enemy_system(
                     commands.entity(fireball_entity).despawn();
                     despawned_entities.insert(fireball_entity);
 
-                    commands.spawn(EnemyDeadToSpawn(Vec3::new(
-                        enemy_transform.translation.x,
-                        enemy_transform.translation.y,
-                        0.0,
-                    )));
+                    let dead_enemy_spawn_type = match enemy_type {
+                        &EnemyVariant::Skelton => EnemyVariant::Skelton,
+                        &EnemyVariant::Zombie => EnemyVariant::Zombie,
+                    };
+
+                    commands.spawn((
+                        EnemyDeadToSpawn(Vec3::new(
+                            enemy_transform.translation.x,
+                            enemy_transform.translation.y,
+                            0.0,
+                        )),
+                        EnemyDead,
+                        dead_enemy_spawn_type,
+                    ));
 
                     // update score
                     player_one_score.value += 1;

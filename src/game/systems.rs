@@ -7,11 +7,16 @@ use crate::enemy::components::Enemy;
 use crate::game::components::{ColorText, FpsText};
 use crate::game::states::GameState;
 use crate::player::actions::ControlAction;
-use crate::player::components::Player;
+use crate::player::components::{Playable, Player};
 use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
 
 pub fn spawn_camera_system(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
+}
+
+pub fn controller_system(_gamepads: Res<Gamepads>, player_query: Query<&Player, With<Playable>>) {
+    for _player in player_query.iter() {}
+    // println!("{:#?}", gamepads)
 }
 
 pub fn toggle_game_state_system(
