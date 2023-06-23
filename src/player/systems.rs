@@ -15,6 +15,7 @@ use crate::player::actions::ControlAction;
 use crate::player::bundles::PlayerBundle;
 use crate::player::components::{
     Fireball, Lives, Playable, Player, PlayerDead, PlayerDeadTimer, PlayerDeadToSpawn,
+    PlayerVariant,
 };
 use crate::player::{
     PLAYER1_SPRITE, PLAYER2_SPRITE, PLAYER_FIREBALL_SCALE, PLAYER_FIREBALL_SIZE, PLAYER_SCALE,
@@ -43,9 +44,9 @@ pub fn player_spawn_system(
 
     commands.spawn((
         PlayerBundle {
-            player: Player::One,
+            player: Player,
             input_manager: InputManagerBundle {
-                input_map: PlayerBundle::input_map(Player::One),
+                input_map: PlayerBundle::input_map(PlayerVariant::One),
                 ..default()
             },
         },
@@ -68,9 +69,9 @@ pub fn player_spawn_system(
 
     commands.spawn((
         PlayerBundle {
-            player: Player::Two,
+            player: Player,
             input_manager: InputManagerBundle {
-                input_map: PlayerBundle::input_map(Player::Two),
+                input_map: PlayerBundle::input_map(PlayerVariant::Two),
                 ..default()
             },
         },
@@ -95,13 +96,13 @@ pub fn player_spawn_system(
 pub fn player_respawn_system(
     mut player_query: Query<
         (
-            &Player,
+            &PlayerVariant,
             &mut Vitality,
             &Lives,
             &ActionState<ControlAction>,
             &mut Handle<TextureAtlas>,
         ),
-        With<Playable>,
+        With<Player>,
     >,
     keyboard_input: Res<Input<KeyCode>>,
     game_textures: Res<GameTextures>,
@@ -114,8 +115,8 @@ pub fn player_respawn_system(
                 || controller_input.just_pressed(ControlAction::Restart)
             {
                 let player_sprite_atlas = match player {
-                    Player::One => game_textures.player_one.clone(),
-                    Player::Two => game_textures.player_two.clone(),
+                    PlayerVariant::One => game_textures.player_one.clone(),
+                    PlayerVariant::Two => game_textures.player_two.clone(),
                 };
                 *player_state = Vitality::Alive;
                 *sprite_handle = player_sprite_atlas;
@@ -145,7 +146,7 @@ pub fn players_dead_system(
 pub fn player_fire_system(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    player_query: Query<(&Transform, &ActionState<ControlAction>, &Vitality), With<Playable>>,
+    player_query: Query<(&Transform, &ActionState<ControlAction>, &Vitality), With<Player>>,
     game_textures: Res<GameTextures>,
     audio: Res<Audio>,
 ) {

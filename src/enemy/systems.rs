@@ -11,7 +11,7 @@ use crate::game::states::GameState;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
-use crate::player::components::{Lives, Playable, Player, PlayerDeadToSpawn};
+use crate::player::components::{Lives, Playable, Player, PlayerDeadToSpawn, PlayerVariant};
 use crate::player::PLAYER_SIZE;
 
 use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
@@ -200,15 +200,15 @@ pub fn enemy_hit_player_system(
     mut commands: Commands,
     mut player_query: Query<
         (
-            &Player,
+            &PlayerVariant,
             &mut Vitality,
             &mut Lives,
             &Transform,
             &mut Handle<TextureAtlas>,
         ),
-        With<Playable>,
+        (With<Player>, Without<Enemy>),
     >,
-    enemy_query: Query<(&Transform, &Vitality), (With<Enemy>, Without<Playable>)>,
+    enemy_query: Query<(&Transform, &Vitality), (With<Enemy>, Without<Player>)>,
     game_textures: Res<GameTextures>,
     // score: Res<Score>,
     asset_server: Res<AssetServer>,
@@ -228,8 +228,8 @@ pub fn enemy_hit_player_system(
         {
             if *player_vitality == Vitality::Alive {
                 let player_ghost_sprite_atlas = match player {
-                    Player::One => game_textures.player_one_ghost.clone(),
-                    Player::Two => game_textures.player_two_ghost.clone(),
+                    PlayerVariant::One => game_textures.player_one_ghost.clone(),
+                    PlayerVariant::Two => game_textures.player_two_ghost.clone(),
                 };
 
                 let distance = player_transform

@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 
+#[derive(Component)]
+pub struct Player;
+
 #[derive(Component, Clone, Debug)]
-pub enum Player {
+pub enum PlayerVariant {
     One,
     Two,
 }

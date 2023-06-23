@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
 
 use crate::player::actions::ControlAction;
-use crate::player::components::Player;
+use crate::player::components::{Player, PlayerVariant};
 
 #[derive(Bundle)]
 pub struct PlayerBundle {
@@ -15,9 +15,9 @@ pub struct PlayerBundle {
 }
 
 impl PlayerBundle {
-    pub fn input_map(player: Player) -> InputMap<ControlAction> {
-        let mut input_map = match player {
-            Player::One => InputMap::new([
+    pub fn input_map(player_variant: PlayerVariant) -> InputMap<ControlAction> {
+        let mut input_map = match player_variant {
+            PlayerVariant::One => InputMap::new([
                 (KeyCode::W, ControlAction::Up),
                 (KeyCode::S, ControlAction::Down),
                 (KeyCode::A, ControlAction::Left),
@@ -26,7 +26,7 @@ impl PlayerBundle {
             ])
             .set_gamepad(Gamepad { id: 0 })
             .build(),
-            Player::Two => InputMap::new([
+            PlayerVariant::Two => InputMap::new([
                 (KeyCode::Up, ControlAction::Up),
                 (KeyCode::Down, ControlAction::Down),
                 (KeyCode::Left, ControlAction::Left),
