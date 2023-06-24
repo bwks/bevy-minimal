@@ -31,12 +31,3 @@ pub struct PlayerDead;
 
 #[derive(Component)]
 pub struct PlayerDeadToSpawn(pub Vec3);
-
-#[derive(Component)]
-pub struct PlayerDeadTimer(pub Timer);
-
-impl Default for PlayerDeadTimer {
-    fn default() -> Self {
-        Self(Timer::from_seconds(0.1, TimerMode::Repeating))
-    }
-}

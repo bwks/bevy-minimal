@@ -14,3 +14,10 @@ pub struct GameTextures {
     pub enemy_skeleton_dead: Handle<TextureAtlas>,
     pub bullet: Handle<TextureAtlas>,
 }
+
+#[derive(Resource)]
+pub struct GameAudio {
+    pub player_dead: Handle<AudioSource>,
+    pub player_shoot: Handle<AudioSource>,
+    pub enemy_dead: Handle<AudioSource>,
+}

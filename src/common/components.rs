@@ -1,4 +1,4 @@
-use bevy::prelude::{Component, Deref, DerefMut};
+use bevy::prelude::*;
 use bevy::time::Timer;
 
 #[derive(Component, Debug, PartialEq, Eq)]
@@ -26,3 +26,9 @@ pub struct AnimationIndices {
 
 #[derive(Component, Deref, DerefMut)]
 pub struct AnimationTimer(pub Timer);
+
+impl Default for AnimationTimer {
+    fn default() -> Self {
+        Self(Timer::from_seconds(0.1, TimerMode::Repeating))
+    }
+}

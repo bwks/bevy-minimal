@@ -8,14 +8,14 @@ use leafwing_input_manager::prelude::ActionState;
 use leafwing_input_manager::InputManagerBundle;
 
 use crate::common::components::{AnimationIndices, AnimationTimer, Vitality};
-use crate::common::resources::GameTextures;
+use crate::common::resources::{GameAudio, GameTextures};
+use crate::common::utils::{animate_sprite, animate_sprite_single};
 use crate::common::{SCROLL_X_VELOCITY, SCROLL_Y_VELOCITY};
 use crate::game::states::GameState;
 use crate::player::actions::ControlAction;
-use crate::player::bundles::PlayerBundle;
+use crate::player::bundles::{PlayerBundle, PlayerDeadBundle};
 use crate::player::components::{
-    Fireball, Lives, Playable, Player, PlayerDead, PlayerDeadTimer, PlayerDeadToSpawn,
-    PlayerVariant,
+    Fireball, Lives, Playable, Player, PlayerDead, PlayerDeadToSpawn, PlayerVariant,
 };
 use crate::player::{
     PLAYER1_SPRITE, PLAYER2_SPRITE, PLAYER_FIREBALL_SCALE, PLAYER_FIREBALL_SIZE, PLAYER_SCALE,
@@ -42,15 +42,19 @@ pub fn player_spawn_system(
         last: 13,
     };
 
-    commands.spawn((
-        PlayerBundle {
-            player: Player,
-            input_manager: InputManagerBundle {
-                input_map: PlayerBundle::input_map(PlayerVariant::One),
-                ..default()
-            },
+    // Player 1
+    commands.spawn(PlayerBundle {
+        player: Player,
+        variant: PlayerVariant::One,
+        lives: Lives::default(),
+        vitality: Vitality::Alive,
+        animation_indices: animation_indices,
+        animation_timer: AnimationTimer::default(),
+        input_manager: InputManagerBundle {
+            input_map: PlayerBundle::input_map(PlayerVariant::One),
+            ..Default::default()
         },
-        SpriteSheetBundle {
+        sprite_sheet: SpriteSheetBundle {
             texture_atlas: game_textures.player_one.clone(),
             sprite: TextureAtlasSprite::new(11),
             transform: Transform {
@@ -60,22 +64,21 @@ pub fn player_spawn_system(
             },
             ..Default::default()
         },
-        animation_indices,
-        AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
-        Vitality::Alive,
-        Playable {},
-        Lives::default(),
-    ));
+    });
 
-    commands.spawn((
-        PlayerBundle {
-            player: Player,
-            input_manager: InputManagerBundle {
-                input_map: PlayerBundle::input_map(PlayerVariant::Two),
-                ..default()
-            },
+    // Player 2
+    commands.spawn(PlayerBundle {
+        player: Player,
+        variant: PlayerVariant::Two,
+        lives: Lives::default(),
+        vitality: Vitality::Alive,
+        animation_indices: animation_indices,
+        animation_timer: AnimationTimer::default(),
+        input_manager: InputManagerBundle {
+            input_map: PlayerBundle::input_map(PlayerVariant::Two),
+            ..Default::default()
         },
-        SpriteSheetBundle {
+        sprite_sheet: SpriteSheetBundle {
             texture_atlas: game_textures.player_two.clone(),
             sprite: TextureAtlasSprite::new(11),
             transform: Transform {
@@ -85,12 +88,7 @@ pub fn player_spawn_system(
             },
             ..Default::default()
         },
-        animation_indices,
-        AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
-        Vitality::Alive,
-        Playable {},
-        Lives::default(),
-    ));
+    });
 }
 
 pub fn player_respawn_system(
@@ -126,7 +124,7 @@ pub fn player_respawn_system(
 }
 
 pub fn players_dead_system(
-    player_query: Query<(&Vitality, &Lives), With<Playable>>,
+    player_query: Query<(&Vitality, &Lives), With<Player>>,
     // game_state: Res<State<GameState>>,
     mut next_app_state: ResMut<NextState<GameState>>,
 ) {
@@ -145,9 +143,9 @@ pub fn players_dead_system(
 
 pub fn player_fire_system(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
     player_query: Query<(&Transform, &ActionState<ControlAction>, &Vitality), With<Player>>,
     game_textures: Res<GameTextures>,
+    game_audio: Res<GameAudio>,
     audio: Res<Audio>,
 ) {
     for (player_transform, player_fire_action, player_state) in player_query.iter() {
@@ -174,8 +172,7 @@ pub fn player_fire_system(
                 Movable { auto_despawn: true },
                 Velocity { x: 1.0, y: 0.0 },
             ));
-            let fire_sound = asset_server.load("shoot.ogg");
-            audio.play(fire_sound);
+            audio.play(game_audio.player_shoot.clone());
         }
     }
 }
@@ -222,15 +219,7 @@ pub fn player_movement_system(
         }
 
         if direction.length() > 0.0 {
-            // direction = direction.normalize();
-            timer.tick(time.delta());
-            if timer.just_finished() {
-                if sprite.index < indices.first || sprite.index == indices.last {
-                    sprite.index = 10;
-                } else {
-                    sprite.index += 1;
-                };
-            }
+            animate_sprite(&mut sprite, &indices, &mut timer, &time)
         } else {
             sprite.index = 11;
         }
@@ -297,11 +286,10 @@ pub fn fireball_movement_system(
 pub fn player_fireball_hit_enemy_system(
     mut commands: Commands,
     fireball_query: Query<(Entity, &Transform), With<Fireball>>,
-    mut enemy_query: Query<(Entity, &EnemyVariant, &Vitality, &Transform), Without<Playable>>,
+    mut enemy_query: Query<(Entity, &EnemyVariant, &Vitality, &Transform), With<Enemy>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     mut player_one_score: ResMut<PlayerOneScore>,
-    asset_server: Res<AssetServer>,
-    // game_textures: Res<GameTextures>,
+    game_audio: Res<GameAudio>,
     audio: Res<Audio>,
 ) {
     let window = window_query.get_single().unwrap();
@@ -339,8 +327,7 @@ pub fn player_fireball_hit_enemy_system(
                 if collision.is_some() {
                     // remove the enemy
 
-                    let zombie_die_sound = asset_server.load("zombie-die.ogg");
-                    audio.play(zombie_die_sound);
+                    audio.play(game_audio.enemy_dead.clone());
 
                     commands.entity(enemy_entity).despawn();
                     despawned_entities.insert(enemy_entity);
@@ -381,8 +368,19 @@ pub fn player_dead_spawn_system(
 ) {
     for (player_dead_entity, player_dead_location) in enemy_query.iter() {
         // spawn the dead enemy sprite
-        commands.spawn((
-            SpriteSheetBundle {
+        commands.spawn(PlayerDeadBundle {
+            player_dead: PlayerDead,
+            animation_indices: AnimationIndices {
+                first: 10,
+                last: 13,
+            },
+            animation_timer: AnimationTimer::default(),
+            movable: Movable { auto_despawn: true },
+            velocity: Velocity {
+                x: SCROLL_X_VELOCITY,
+                y: SCROLL_Y_VELOCITY,
+            },
+            sprite_sheet: SpriteSheetBundle {
                 texture_atlas: game_textures.player_one_dead.clone(),
                 sprite: TextureAtlasSprite::new(11),
                 transform: Transform {
@@ -392,15 +390,7 @@ pub fn player_dead_spawn_system(
                 },
                 ..Default::default()
             },
-            PlayerDead,
-            PlayerDeadTimer::default(),
-            Movable { auto_despawn: true },
-            Velocity {
-                x: SCROLL_X_VELOCITY,
-                y: SCROLL_Y_VELOCITY,
-            },
-        ));
-
+        });
         // despawn the PlayerDeadToSpawn
         commands.entity(player_dead_entity).despawn();
     }
@@ -409,10 +399,11 @@ pub fn player_dead_spawn_system(
 pub fn player_dead_animation_system(
     mut commands: Commands,
     time: Res<Time>,
-    mut player_query: Query<
+    mut player_dead_query: Query<
         (
             Entity,
-            &mut PlayerDeadTimer,
+            &mut AnimationTimer,
+            &AnimationIndices,
             &mut TextureAtlasSprite,
             &Velocity,
             &mut Transform,
@@ -424,23 +415,32 @@ pub fn player_dead_animation_system(
 ) {
     let window = window_query.get_single().unwrap();
 
-    for (dead_player_entity, mut timer, mut sprite, velocity, mut player_transform, movable) in
-        player_query.iter_mut()
+    for (
+        player_dead_entity,
+        mut player_dead_animation_timer,
+        player_dead_animation_indices,
+        mut player_dead_sprite,
+        player_dead_velocity,
+        mut player_dead_transform,
+        player_dead_movable,
+    ) in player_dead_query.iter_mut()
     {
-        if sprite.index < 13 {
-            timer.0.tick(time.delta());
-            if timer.0.finished() {
-                sprite.index += 1;
-            }
+        if player_dead_sprite.index < player_dead_animation_indices.last {
+            animate_sprite_single(
+                &mut player_dead_sprite,
+                &player_dead_animation_indices,
+                &mut player_dead_animation_timer,
+                &time,
+            )
         }
-        let player_translation = &mut player_transform.translation;
-        player_translation.x -= velocity.x * TIME_STEP * BASE_SPEED / 2.0 + 1.0;
+        let player_dead_translation = &mut player_dead_transform.translation;
+        player_dead_translation.x -= player_dead_velocity.x * TIME_STEP * BASE_SPEED / 2.0 + 1.0;
 
-        if movable.auto_despawn {
+        if player_dead_movable.auto_despawn {
             // despawn when out of screen
             let window_margin = -window.width() / 2.0 - 20.0;
-            if player_translation.x < window_margin {
-                commands.entity(dead_player_entity).despawn();
+            if player_dead_translation.x < window_margin {
+                commands.entity(player_dead_entity).despawn();
             }
         }
     }

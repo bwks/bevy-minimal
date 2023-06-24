@@ -2,16 +2,38 @@ use bevy::prelude::*;
 
 use leafwing_input_manager::prelude::*;
 
+use crate::common::components::{AnimationIndices, AnimationTimer, Movable, Velocity, Vitality};
 use crate::player::actions::ControlAction;
-use crate::player::components::{Player, PlayerVariant};
+use crate::player::components::{Lives, Player, PlayerDead, PlayerVariant};
+
+#[derive(Bundle)]
+pub struct PlayerDeadBundle {
+    pub player_dead: PlayerDead,
+    pub animation_indices: AnimationIndices,
+    pub animation_timer: AnimationTimer,
+    pub movable: Movable,
+    pub velocity: Velocity,
+
+    #[bundle]
+    pub sprite_sheet: SpriteSheetBundle,
+}
 
 #[derive(Bundle)]
 pub struct PlayerBundle {
     pub player: Player,
+    pub variant: PlayerVariant,
+    pub lives: Lives,
+    pub vitality: Vitality,
+    pub animation_indices: AnimationIndices,
+    pub animation_timer: AnimationTimer,
+
     // This bundle must be added to your player entity
     // (or whatever else you wish to control)
     #[bundle]
     pub input_manager: InputManagerBundle<ControlAction>,
+
+    #[bundle]
+    pub sprite_sheet: SpriteSheetBundle,
 }
 
 impl PlayerBundle {

@@ -3,11 +3,12 @@ use bevy::diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::ActionState;
 
+use crate::common::components::Vitality;
 use crate::enemy::components::Enemy;
 use crate::game::components::{ColorText, FpsText};
 use crate::game::states::GameState;
 use crate::player::actions::ControlAction;
-use crate::player::components::{Playable, Player};
+use crate::player::components::{Lives, Playable, Player, PlayerVariant};
 use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
 
 pub fn spawn_camera_system(mut commands: Commands) {
@@ -38,6 +39,15 @@ pub fn toggle_game_state_system(
                 }
             }
         }
+    }
+}
+
+pub fn game_over_system(
+    mut commands: Commands,
+    player_query: Query<(&PlayerVariant, &Vitality, &Lives), (With<Player>, Without<Enemy>)>,
+) {
+    if player_query.iter().len() == 0 {
+        commands.insert_resource(NextState(Some(GameState::Paused)));
     }
 }
 

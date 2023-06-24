@@ -9,8 +9,8 @@ pub mod world;
 use bevy::prelude::*;
 use bevy::window::WindowMode;
 
-use crate::common::resources::GameTextures;
-use crate::common::utils::get_texture_atlas;
+use crate::common::resources::{GameAudio, GameTextures};
+use crate::common::utils::{get_game_sound, get_texture_atlas};
 
 use enemy::EnemyPlugin;
 use enemy::{ENEMY1_DEAD_SPRITE, ENEMY1_SPRITE, ENEMY2_DEAD_SPRITE, ENEMY2_SPRITE};
@@ -28,6 +28,7 @@ pub fn setup_system(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
+    // Game Textures
     let player1_texture_atlas = get_texture_atlas(PLAYER1_SPRITE, &asset_server);
     let player1_texture_handle = texture_atlases.add(player1_texture_atlas);
 
@@ -72,6 +73,18 @@ pub fn setup_system(
         bullet: bullet_texture_handle,
     };
     commands.insert_resource(game_textures);
+
+    // Game Sounds
+    let player_dead_sound = get_game_sound("dead.ogg", &asset_server);
+    let player_shoot_sound = get_game_sound("shoot.ogg", &asset_server);
+    let enemy_dead_sound = get_game_sound("zombie-die.ogg", &asset_server);
+
+    let game_sounds = GameAudio {
+        player_dead: player_dead_sound,
+        player_shoot: player_shoot_sound,
+        enemy_dead: enemy_dead_sound,
+    };
+    commands.insert_resource(game_sounds);
 }
 
 fn main() {

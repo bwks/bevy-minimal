@@ -7,6 +7,7 @@ use crate::enemy::resources::EnemySpawnTimer;
 use crate::enemy::{
     ENEMY1_DEAD_SPRITE, ENEMY1_SPRITE, ENEMY2_DEAD_SPRITE, ENEMY2_SPRITE, NUMBER_OF_ENEMIES,
 };
+use crate::game;
 use crate::game::states::GameState;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
@@ -17,7 +18,8 @@ use crate::player::PLAYER_SIZE;
 use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
 
 use crate::common::components::{AnimationIndices, AnimationTimer, Movable, Velocity, Vitality};
-use crate::common::resources::GameTextures;
+use crate::common::resources::{GameAudio, GameTextures};
+use crate::common::utils::{animate_sprite, animate_sprite_single};
 use crate::common::{BASE_SPEED, SCROLL_X_VELOCITY, SCROLL_Y_VELOCITY, TIME_STEP};
 
 pub fn enemy_spawn_system(
@@ -130,7 +132,7 @@ pub fn enemy_movement_system(
         (Entity, &Velocity, &mut Transform, &Movable),
         (With<Enemy>, Without<EnemyDead>),
     >,
-    player_query: Query<(&Transform, &Playable), Without<Enemy>>,
+    player_query: Query<&Transform, (With<Player>, Without<Enemy>)>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     mut player_one_score: ResMut<PlayerOneScore>,
     mut player_two_score: ResMut<PlayerTwoScore>,
@@ -147,7 +149,7 @@ pub fn enemy_movement_system(
     let window = window_query.get_single().unwrap();
     let mut despawned_entities: HashSet<Entity> = HashSet::new();
 
-    for (player_transform, _playable) in player_query.iter() {
+    for player_transform in player_query.iter() {
         let player_y = player_transform.translation.y;
 
         for (enemy_entity, velocity, mut enemy_transform, movable) in enemy_query.iter_mut() {
@@ -168,14 +170,7 @@ pub fn enemy_movement_system(
                 }
             }
             for (indices, mut timer, mut sprite) in &mut enemy_animate_query {
-                timer.tick(time.delta());
-                if timer.just_finished() {
-                    sprite.index = if sprite.index == indices.last {
-                        indices.first
-                    } else {
-                        sprite.index + 1
-                    };
-                }
+                animate_sprite(&mut sprite, &indices, &mut timer, &time)
             }
             if movable.auto_despawn {
                 // despawn when out of screen
@@ -208,30 +203,17 @@ pub fn enemy_hit_player_system(
         ),
         (With<Player>, Without<Enemy>),
     >,
-    enemy_query: Query<(&Transform, &Vitality), (With<Enemy>, Without<Player>)>,
+    enemy_query: Query<&Transform, (With<Enemy>, Without<Player>)>,
     game_textures: Res<GameTextures>,
     // score: Res<Score>,
-    asset_server: Res<AssetServer>,
+    game_audio: Res<GameAudio>,
     audio: Res<Audio>,
 ) {
-    if player_query.iter().len() == 0 {
-        commands.insert_resource(NextState(Some(GameState::Paused)));
-    }
-
-    for (enemy_transform, enemy_vitality) in enemy_query.iter() {
-        if enemy_vitality == &Vitality::Dead {
-            continue;
-        }
-
+    for enemy_transform in enemy_query.iter() {
         for (player, mut player_vitality, mut player_lives, player_transform, mut sprite_handle) in
             player_query.iter_mut()
         {
             if *player_vitality == Vitality::Alive {
-                let player_ghost_sprite_atlas = match player {
-                    PlayerVariant::One => game_textures.player_one_ghost.clone(),
-                    PlayerVariant::Two => game_textures.player_two_ghost.clone(),
-                };
-
                 let distance = player_transform
                     .translation
                     .distance(enemy_transform.translation);
@@ -239,6 +221,12 @@ pub fn enemy_hit_player_system(
                 let enemy_radius = ENEMY1_SPRITE.width / 2.0;
                 if distance < player_radius + enemy_radius {
                     // Spawn dead body
+
+                    let player_ghost_sprite_atlas = match player {
+                        PlayerVariant::One => game_textures.player_one_ghost.clone(),
+                        PlayerVariant::Two => game_textures.player_two_ghost.clone(),
+                    };
+
                     commands.spawn(PlayerDeadToSpawn(Vec3::new(
                         player_transform.translation.x,
                         player_transform.translation.y,
@@ -248,8 +236,7 @@ pub fn enemy_hit_player_system(
                     *player_vitality = Vitality::Dead;
                     player_lives.count -= 1;
                     *sprite_handle = player_ghost_sprite_atlas;
-                    let dead_sound = asset_server.load("dead.ogg");
-                    audio.play(dead_sound);
+                    audio.play(game_audio.player_dead.clone());
                     break;
                 }
             }
@@ -305,7 +292,7 @@ pub fn enemy_dead_spawn_system(
             dead_enemy_spawn_type,
             Vitality::Dead,
             EnemyDead,
-            EnemyDeadTimer::default(),
+            AnimationTimer::default(),
             animation_indices,
             Movable { auto_despawn: true },
             Velocity {
@@ -325,7 +312,7 @@ pub fn enemy_dead_animation_system(
     mut enemy_query: Query<
         (
             Entity,
-            &mut EnemyDeadTimer,
+            &mut AnimationTimer,
             &mut TextureAtlasSprite,
             &AnimationIndices,
             &Velocity,
@@ -342,18 +329,14 @@ pub fn enemy_dead_animation_system(
         dead_enemy_entity,
         mut timer,
         mut sprite,
-        animation_indicies,
+        animation_indices,
         velocity,
         mut enemy_transform,
         movable,
     ) in enemy_query.iter_mut()
     {
-        if sprite.index < animation_indicies.last {
-            timer.0.tick(time.delta());
-            if timer.0.finished() {
-                sprite.index += 1;
-            }
-        }
+        animate_sprite_single(&mut sprite, &animation_indices, &mut timer, &time);
+
         let enemy_translation = &mut enemy_transform.translation;
         enemy_translation.x -= velocity.x * TIME_STEP * BASE_SPEED / 2.0 + 1.0;
 
