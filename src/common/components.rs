@@ -32,3 +32,6 @@ impl Default for AnimationTimer {
         Self(Timer::from_seconds(0.1, TimerMode::Repeating))
     }
 }
+
+#[derive(Component)]
+pub struct EntityDeadLocation(pub Vec3);

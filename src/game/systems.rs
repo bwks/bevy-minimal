@@ -8,16 +8,11 @@ use crate::enemy::components::Enemy;
 use crate::game::components::{ColorText, FpsText};
 use crate::game::states::GameState;
 use crate::player::actions::ControlAction;
-use crate::player::components::{Lives, Playable, Player, PlayerVariant};
-use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
+use crate::player::components::{Lives, Player};
+use crate::score::resources::PlayerOneScore;
 
 pub fn spawn_camera_system(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
-}
-
-pub fn controller_system(_gamepads: Res<Gamepads>, player_query: Query<&Player, With<Playable>>) {
-    for _player in player_query.iter() {}
-    // println!("{:#?}", gamepads)
 }
 
 pub fn toggle_game_state_system(
@@ -43,11 +38,19 @@ pub fn toggle_game_state_system(
 }
 
 pub fn game_over_system(
-    mut commands: Commands,
-    player_query: Query<(&PlayerVariant, &Vitality, &Lives), (With<Player>, Without<Enemy>)>,
+    player_query: Query<(&Vitality, &Lives), With<Player>>,
+    mut next_app_state: ResMut<NextState<GameState>>,
 ) {
-    if player_query.iter().len() == 0 {
-        commands.insert_resource(NextState(Some(GameState::Paused)));
+    let mut dead_players = 0;
+
+    for (player_vitality, player_lives) in player_query.iter() {
+        if *player_vitality == Vitality::Dead && player_lives.count == 0 {
+            dead_players += 1;
+        }
+    }
+
+    if dead_players == 2 {
+        next_app_state.set(GameState::Paused);
     }
 }
 

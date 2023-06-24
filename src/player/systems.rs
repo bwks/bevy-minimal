@@ -7,22 +7,20 @@ use bevy::window::PrimaryWindow;
 use leafwing_input_manager::prelude::ActionState;
 use leafwing_input_manager::InputManagerBundle;
 
-use crate::common::components::{AnimationIndices, AnimationTimer, Vitality};
+use crate::common::components::{AnimationIndices, AnimationTimer, EntityDeadLocation, Vitality};
 use crate::common::resources::{GameAudio, GameTextures};
 use crate::common::utils::{animate_sprite, animate_sprite_single};
 use crate::common::{SCROLL_X_VELOCITY, SCROLL_Y_VELOCITY};
-use crate::game::states::GameState;
+
 use crate::player::actions::ControlAction;
 use crate::player::bundles::{PlayerBundle, PlayerDeadBundle};
-use crate::player::components::{
-    Fireball, Lives, Playable, Player, PlayerDead, PlayerDeadToSpawn, PlayerVariant,
-};
+use crate::player::components::{Fireball, Lives, Player, PlayerDead, PlayerVariant};
 use crate::player::{
     PLAYER1_SPRITE, PLAYER2_SPRITE, PLAYER_FIREBALL_SCALE, PLAYER_FIREBALL_SIZE, PLAYER_SCALE,
     PLAYER_SIZE, PLAYER_SPEED,
 };
 
-use crate::enemy::components::{Enemy, EnemyDead, EnemyDeadToSpawn, EnemyVariant};
+use crate::enemy::components::{Enemy, EnemyDead, EnemyVariant};
 use crate::enemy::ENEMY1_SPRITE;
 use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
 
@@ -109,7 +107,7 @@ pub fn player_respawn_system(
         player_query.iter_mut()
     {
         if *player_state == Vitality::Dead && player_lives.count > 0 {
-            if keyboard_input.just_pressed(KeyCode::F1)
+            if keyboard_input.just_pressed(KeyCode::R)
                 || controller_input.just_pressed(ControlAction::Restart)
             {
                 let player_sprite_atlas = match player {
@@ -120,24 +118,6 @@ pub fn player_respawn_system(
                 *sprite_handle = player_sprite_atlas;
             }
         }
-    }
-}
-
-pub fn players_dead_system(
-    player_query: Query<(&Vitality, &Lives), With<Player>>,
-    // game_state: Res<State<GameState>>,
-    mut next_app_state: ResMut<NextState<GameState>>,
-) {
-    let mut deadcount = 0;
-
-    for (player_vitality, player_lives) in player_query.iter() {
-        if *player_vitality == Vitality::Dead && player_lives.count == 0 {
-            deadcount += 1;
-        }
-    }
-
-    if deadcount == 2 {
-        next_app_state.set(GameState::Paused);
     }
 }
 
@@ -342,7 +322,7 @@ pub fn player_fireball_hit_enemy_system(
                     };
 
                     commands.spawn((
-                        EnemyDeadToSpawn(Vec3::new(
+                        EntityDeadLocation(Vec3::new(
                             enemy_transform.translation.x,
                             enemy_transform.translation.y,
                             0.0,
@@ -364,7 +344,7 @@ pub fn player_fireball_hit_enemy_system(
 pub fn player_dead_spawn_system(
     mut commands: Commands,
     game_textures: Res<GameTextures>,
-    enemy_query: Query<(Entity, &PlayerDeadToSpawn)>,
+    enemy_query: Query<(Entity, &EntityDeadLocation)>,
 ) {
     for (player_dead_entity, player_dead_location) in enemy_query.iter() {
         // spawn the dead enemy sprite

@@ -21,13 +21,7 @@ impl Default for Lives {
 }
 
 #[derive(Component)]
-pub struct Playable;
-
-#[derive(Component)]
 pub struct Fireball;
 
 #[derive(Component)]
 pub struct PlayerDead;
-
-#[derive(Component)]
-pub struct PlayerDeadToSpawn(pub Vec3);

@@ -14,9 +14,6 @@ pub enum EnemyVariant {
 pub struct EnemyDead;
 
 #[derive(Component)]
-pub struct EnemyDeadToSpawn(pub Vec3);
-
-#[derive(Component)]
 pub struct EnemyDeadTimer(pub Timer);
 
 impl Default for EnemyDeadTimer {

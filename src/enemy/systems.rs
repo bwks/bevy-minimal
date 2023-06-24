@@ -2,22 +2,23 @@ use std::collections::HashSet;
 
 use rand::Rng;
 
-use crate::enemy::components::{Enemy, EnemyDead, EnemyDeadTimer, EnemyDeadToSpawn, EnemyVariant};
+use crate::enemy::components::{Enemy, EnemyDead, EnemyVariant};
 use crate::enemy::resources::EnemySpawnTimer;
 use crate::enemy::{
     ENEMY1_DEAD_SPRITE, ENEMY1_SPRITE, ENEMY2_DEAD_SPRITE, ENEMY2_SPRITE, NUMBER_OF_ENEMIES,
 };
-use crate::game;
-use crate::game::states::GameState;
+
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
-use crate::player::components::{Lives, Playable, Player, PlayerDeadToSpawn, PlayerVariant};
+use crate::player::components::{Lives, Player, PlayerVariant};
 use crate::player::PLAYER_SIZE;
 
 use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
 
-use crate::common::components::{AnimationIndices, AnimationTimer, Movable, Velocity, Vitality};
+use crate::common::components::{
+    AnimationIndices, AnimationTimer, EntityDeadLocation, Movable, Velocity, Vitality,
+};
 use crate::common::resources::{GameAudio, GameTextures};
 use crate::common::utils::{animate_sprite, animate_sprite_single};
 use crate::common::{BASE_SPEED, SCROLL_X_VELOCITY, SCROLL_Y_VELOCITY, TIME_STEP};
@@ -227,7 +228,7 @@ pub fn enemy_hit_player_system(
                         PlayerVariant::Two => game_textures.player_two_ghost.clone(),
                     };
 
-                    commands.spawn(PlayerDeadToSpawn(Vec3::new(
+                    commands.spawn(EntityDeadLocation(Vec3::new(
                         player_transform.translation.x,
                         player_transform.translation.y,
                         0.0,
@@ -247,7 +248,7 @@ pub fn enemy_hit_player_system(
 pub fn enemy_dead_spawn_system(
     mut commands: Commands,
     game_textures: Res<GameTextures>,
-    enemy_query: Query<(Entity, &EnemyVariant, &EnemyDeadToSpawn), With<EnemyDead>>,
+    enemy_query: Query<(Entity, &EnemyVariant, &EntityDeadLocation), With<EnemyDead>>,
 ) {
     for (enemy_dead_entity, enemy_type, enemy_dead_location) in enemy_query.iter() {
         // spawn the dead enemy sprite
