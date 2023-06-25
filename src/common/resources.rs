@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::common::DEFAULT_SPAWN_TIMER;
+
 #[derive(Resource, Default)]
 pub struct GameTextures {
     pub player_one: Handle<TextureAtlas>,
@@ -24,3 +26,24 @@ pub struct GameAudio {
     pub player_shoot: Handle<AudioSource>,
     pub enemy_dead: Handle<AudioSource>,
 }
+
+// #[derive(Resource)]
+// pub struct TimerRepeating {
+//     pub timer: Timer,
+// }
+
+// impl Default for TimerRepeating {
+//     fn default() -> Self {
+//         Self {
+//             timer: Timer::from_seconds(DEFAULT_SPAWN_TIMER, TimerMode::Repeating),
+//         }
+//     }
+// }
+
+// impl TimerRepeating {
+//     pub fn new(seconds: f32) -> Self {
+//         Self {
+//             timer: Timer::from_seconds(seconds, TimerMode::Repeating),
+//         }
+//     }
+// }
