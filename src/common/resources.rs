@@ -1,7 +1,5 @@
 use bevy::prelude::*;
 
-use crate::common::DEFAULT_SPAWN_TIMER;
-
 #[derive(Resource, Default)]
 pub struct GameTextures {
     pub player_one: Handle<TextureAtlas>,

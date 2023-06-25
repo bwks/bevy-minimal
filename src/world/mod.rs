@@ -2,7 +2,6 @@ pub mod components;
 pub mod resources;
 pub mod systems;
 
-use crate::common::SpriteSheet;
 use crate::game::states::GameState;
 use crate::world::systems::{
     tree_movement_system, tree_spawn_system, tree_spawn_system_init, tree_spawn_timer_tick_system,

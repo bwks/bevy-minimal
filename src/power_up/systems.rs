@@ -39,7 +39,7 @@ pub fn diamond_spawn_system(
                 sprite: TextureAtlasSprite::new(animation_indices.first),
                 // transform: Transform::from_scale(Vec3::splat(3.0)),
                 transform: Transform {
-                    translation: Vec3::new(random_width, random_height, 10.0),
+                    translation: Vec3::new(random_width, random_height, 1.0),
                     scale: Vec3::splat(DIAMOND_SPRITE.scale),
                     ..Default::default()
                 },
