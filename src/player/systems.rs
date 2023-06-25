@@ -22,8 +22,8 @@ use crate::player::{
     PLAYER_SIZE, PLAYER_SPEED,
 };
 
-use crate::power_up::components::{PowerUp, PowerUpVariant};
-use crate::power_up::DIAMOND_SPRITE;
+use crate::item::components::{ItemVariant, PowerUp};
+use crate::item::DIAMOND_SPRITE;
 
 use crate::enemy::bundles::EnemyDeadLocationBundle;
 use crate::enemy::components::{Enemy, EnemyDeadLocation, EnemyVariant};

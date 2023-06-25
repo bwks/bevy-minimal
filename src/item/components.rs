@@ -12,7 +12,7 @@ pub struct Diamond;
 pub struct PowerUp;
 
 #[derive(Component)]
-pub enum PowerUpVariant {
+pub enum ItemVariant {
     Diamond,
     Mushroom,
 }

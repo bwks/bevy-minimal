@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::power_up::DIAMOND_SPAWN_TIME;
+use crate::item::DIAMOND_SPAWN_TIME;
 
 #[derive(Resource)]
 pub struct DiamondSpawnTimer {

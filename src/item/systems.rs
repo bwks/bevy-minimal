@@ -7,9 +7,9 @@ use crate::common::components::{AnimationIndices, AnimationTimer, Movable, Veloc
 use crate::common::resources::GameTextures;
 use crate::common::utils::animate_sprite;
 
-use crate::power_up::bundles::PowerUpBundle;
-use crate::power_up::components::{PowerUp, PowerUpVariant};
-use crate::power_up::resources::DiamondSpawnTimer;
+use crate::item::bundles::PowerUpBundle;
+use crate::item::components::{ItemVariant, PowerUp};
+use crate::item::resources::DiamondSpawnTimer;
 
 use crate::DIAMOND_SPRITE;
 
@@ -36,7 +36,7 @@ pub fn diamond_spawn_system(
 
         commands.spawn(PowerUpBundle {
             power_up: PowerUp,
-            variant: PowerUpVariant::Diamond,
+            variant: ItemVariant::Diamond,
             animation_indices: animation_indices,
             animation_timer: AnimationTimer::default(),
             movable: Movable::default(),

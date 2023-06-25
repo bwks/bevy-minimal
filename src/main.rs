@@ -1,8 +1,8 @@
 pub mod common;
 pub mod enemy;
 pub mod game;
+pub mod item;
 pub mod player;
-pub mod power_up;
 pub mod score;
 pub mod world;
 
@@ -12,7 +12,7 @@ use bevy::window::WindowMode;
 use common::resources::{GameAudio, GameTextures};
 use common::utils::{get_game_sound, get_texture_atlas};
 
-use power_up::DIAMOND_SPRITE;
+use item::DIAMOND_SPRITE;
 
 use enemy::EnemyPlugin;
 use enemy::{
@@ -25,7 +25,7 @@ use player::{
     PLAYER2_GHOST_SPRITE, PLAYER2_SPRITE,
 };
 
-use power_up::PowerUpPlugin;
+use item::PowerUpPlugin;
 use score::ScorePlugin;
 use world::WorldPlugin;
 
