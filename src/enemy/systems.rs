@@ -246,11 +246,11 @@ pub fn enemy_hit_player_system(
                     // Spawn dead body
                     commands.spawn(PlayerDeadLocationBundle {
                         entity: PlayerDeadLocation,
-                        location: EntityLocation(Vec3::new(
-                            player_transform.translation.x,
-                            player_transform.translation.y,
-                            0.0,
-                        )),
+                        location: EntityLocation {
+                            x: player_transform.translation.x,
+                            y: player_transform.translation.y,
+                            z: 0.0,
+                        },
                     });
 
                     break;
@@ -320,7 +320,11 @@ pub fn enemy_dead_spawn_system(
                     texture_atlas: enemy_texture,
                     sprite: TextureAtlasSprite::new(animation_indices.first),
                     transform: Transform {
-                        translation: enemy_dead_location.0,
+                        translation: Vec3::new(
+                            enemy_dead_location.x,
+                            enemy_dead_location.y,
+                            enemy_dead_location.z,
+                        ),
                         scale: Vec3::splat(enemy_sprite.scale),
                         rotation: if flip_x {
                             Quat::from_rotation_y(std::f32::consts::PI)

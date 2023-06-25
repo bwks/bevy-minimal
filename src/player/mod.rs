@@ -12,7 +12,7 @@ use crate::player::actions::ControlAction;
 use crate::player::systems::{
     fireball_movement_system, player_confinement_system, player_dead_movement_system,
     player_dead_spawn_system, player_fire_system, player_fireball_hit_enemy_system,
-    player_movement_system, player_respawn_system, player_spawn_system,
+    player_hit_power_up_system, player_movement_system, player_respawn_system, player_spawn_system,
 };
 
 pub const PLAYER1_SPRITE: SpriteSheet = SpriteSheet {
@@ -106,6 +106,7 @@ impl Plugin for PlayerPlugin {
                     player_fireball_hit_enemy_system,
                     player_dead_spawn_system,
                     player_dead_movement_system,
+                    player_hit_power_up_system,
                 )
                     .in_set(PlayerSystemSet),
             )

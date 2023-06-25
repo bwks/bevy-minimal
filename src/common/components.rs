@@ -1,8 +1,9 @@
 use bevy::prelude::*;
 use bevy::time::Timer;
 
-#[derive(Component, Debug, PartialEq, Eq)]
+#[derive(Component, Debug, PartialEq, Eq, Default)]
 pub enum Vitality {
+    #[default]
     Alive,
     Dead,
 }
@@ -13,9 +14,23 @@ pub struct Velocity {
     pub y: f32,
 }
 
+impl Default for Velocity {
+    fn default() -> Self {
+        Self { x: 0.0, y: 0.0 }
+    }
+}
+
 #[derive(Component)]
 pub struct Movable {
     pub auto_despawn: bool,
+}
+
+impl Default for Movable {
+    fn default() -> Self {
+        Self {
+            auto_despawn: false,
+        }
+    }
 }
 
 #[derive(Component, Clone, Copy)]
@@ -34,4 +49,8 @@ impl Default for AnimationTimer {
 }
 
 #[derive(Component)]
-pub struct EntityLocation(pub Vec3);
+pub struct EntityLocation {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}

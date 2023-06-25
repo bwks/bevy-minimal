@@ -7,3 +7,12 @@ pub struct Mushroom;
 
 #[derive(Component)]
 pub struct Diamond;
+
+#[derive(Component)]
+pub struct PowerUp;
+
+#[derive(Component)]
+pub enum PowerUpVariant {
+    Diamond,
+    Mushroom,
+}

@@ -22,6 +22,9 @@ use crate::player::{
     PLAYER_SIZE, PLAYER_SPEED,
 };
 
+use crate::power_up::components::{PowerUp, PowerUpVariant};
+use crate::power_up::DIAMOND_SPRITE;
+
 use crate::enemy::bundles::EnemyDeadLocationBundle;
 use crate::enemy::components::{Enemy, EnemyDeadLocation, EnemyVariant};
 use crate::enemy::ENEMY1_SPRITE;
@@ -175,8 +178,13 @@ pub fn player_movement_system(
 
     time: Res<Time>,
 ) {
-    for (mut player_transform, player_move_action, indices, mut timer, mut sprite) in
-        player_query.iter_mut()
+    for (
+        mut player_transform,
+        player_move_action,
+        animation_indices,
+        mut animation_timer,
+        mut sprite,
+    ) in player_query.iter_mut()
     {
         let mut direction = Vec3::ZERO;
         for input_direction in ControlAction::PLAYER_MOVE {
@@ -203,7 +211,7 @@ pub fn player_movement_system(
         }
 
         if direction.length() > 0.0 {
-            animate_sprite(&mut sprite, &indices, &mut timer, &time)
+            animate_sprite(&mut sprite, &animation_indices, &mut animation_timer, &time)
         } else {
             sprite.index = 11;
         }
@@ -325,11 +333,11 @@ pub fn player_fireball_hit_enemy_system(
                     commands.spawn(EnemyDeadLocationBundle {
                         entity: EnemyDeadLocation,
                         variant: enemy_variant.clone(),
-                        location: EntityLocation(Vec3::new(
-                            enemy_transform.translation.x,
-                            enemy_transform.translation.y,
-                            0.0,
-                        )),
+                        location: EntityLocation {
+                            x: enemy_transform.translation.x,
+                            y: enemy_transform.translation.y,
+                            z: 0.0,
+                        },
                     });
 
                     break;
@@ -362,7 +370,11 @@ pub fn player_dead_spawn_system(
                 texture_atlas: game_textures.player_one_dead.clone(),
                 sprite: TextureAtlasSprite::new(11),
                 transform: Transform {
-                    translation: player_dead_location.0,
+                    translation: Vec3::new(
+                        player_dead_location.x,
+                        player_dead_location.y,
+                        player_dead_location.z,
+                    ),
                     scale: Vec3::splat(3.0),
                     ..Default::default()
                 },
@@ -419,6 +431,54 @@ pub fn player_dead_movement_system(
             let window_margin = -window.width() / 2.0 - 20.0;
             if player_dead_translation.x < window_margin {
                 commands.entity(player_dead_entity).despawn();
+            }
+        }
+    }
+}
+
+pub fn player_hit_power_up_system(
+    mut commands: Commands,
+    mut player_query: Query<
+        (
+            Entity,
+            &PlayerVariant,
+            &mut Vitality,
+            &mut Lives,
+            &Transform,
+            &mut Handle<TextureAtlas>,
+        ),
+        (With<Player>, Without<PowerUp>),
+    >,
+    power_up_query: Query<(Entity, &Transform), (With<PowerUp>, Without<Player>)>,
+    _game_textures: Res<GameTextures>,
+    // score: Res<Score>,
+    _game_audio: Res<GameAudio>,
+    _audio: Res<Audio>,
+) {
+    // println!("number of power ups: {}", power_up_query.iter().len());
+    for (power_up_entity, power_up_transform) in power_up_query.iter() {
+        for (
+            player_entity,
+            player,
+            mut player_vitality,
+            mut player_lives,
+            player_transform,
+            mut sprite_handle,
+        ) in player_query.iter_mut()
+        {
+            if *player_vitality == Vitality::Alive {
+                let distance = player_transform
+                    .translation
+                    .distance(power_up_transform.translation);
+                let player_radius = PLAYER_SIZE.0 / 2.0;
+                let power_up_radius = DIAMOND_SPRITE.width / 2.0;
+                if distance < player_radius + power_up_radius {
+                    println!("GOT A DIAMOND");
+                    commands.entity(power_up_entity).despawn_recursive();
+                    // commands.entity(player_entity).despawn();
+
+                    break;
+                }
             }
         }
     }

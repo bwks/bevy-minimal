@@ -3,10 +3,12 @@ use rand::Rng;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
-use crate::common::components::AnimationIndices;
+use crate::common::components::{AnimationIndices, AnimationTimer, Movable, Velocity};
 use crate::common::resources::GameTextures;
+use crate::common::utils::animate_sprite;
 
-use crate::power_up::components::Diamond;
+use crate::power_up::bundles::PowerUpBundle;
+use crate::power_up::components::{PowerUp, PowerUpVariant};
 use crate::power_up::resources::DiamondSpawnTimer;
 
 use crate::DIAMOND_SPRITE;
@@ -30,14 +32,18 @@ pub fn diamond_spawn_system(
         let random_width = rng.gen_range(spawn_area_width_start..spawn_area_width_end);
         let random_height = rng.gen_range(spawn_area_height_start..spawn_area_height_end);
 
-        let animation_indices = AnimationIndices { first: 0, last: 8 };
+        let animation_indices = AnimationIndices { first: 0, last: 9 };
 
-        commands.spawn((
-            Diamond,
-            SpriteSheetBundle {
+        commands.spawn(PowerUpBundle {
+            power_up: PowerUp,
+            variant: PowerUpVariant::Diamond,
+            animation_indices: animation_indices,
+            animation_timer: AnimationTimer::default(),
+            movable: Movable::default(),
+            velocity: Velocity::default(),
+            sprite_sheet: SpriteSheetBundle {
                 texture_atlas: game_textures.diamond.clone(),
                 sprite: TextureAtlasSprite::new(animation_indices.first),
-                // transform: Transform::from_scale(Vec3::splat(3.0)),
                 transform: Transform {
                     translation: Vec3::new(random_width, random_height, 1.0),
                     scale: Vec3::splat(DIAMOND_SPRITE.scale),
@@ -45,8 +51,7 @@ pub fn diamond_spawn_system(
                 },
                 ..Default::default()
             },
-            animation_indices,
-        ));
+        });
     }
 }
 
@@ -55,4 +60,27 @@ pub fn diamond_spawn_timer_tick_system(
     time: Res<Time>,
 ) {
     diamond_spawn_timer.timer.tick(time.delta());
+}
+
+pub fn power_up_animation_system(
+    time: Res<Time>,
+    mut power_up_query: Query<
+        (
+            &mut AnimationTimer,
+            &AnimationIndices,
+            &mut TextureAtlasSprite,
+        ),
+        With<PowerUp>,
+    >,
+) {
+    for (mut power_up_animation_timer, power_up_animation_indices, mut power_up_sprite) in
+        power_up_query.iter_mut()
+    {
+        animate_sprite(
+            &mut power_up_sprite,
+            &power_up_animation_indices,
+            &mut power_up_animation_timer,
+            &time,
+        )
+    }
 }
