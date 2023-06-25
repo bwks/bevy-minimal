@@ -7,22 +7,26 @@ use bevy::window::PrimaryWindow;
 use leafwing_input_manager::prelude::ActionState;
 use leafwing_input_manager::InputManagerBundle;
 
-use crate::common::components::{AnimationIndices, AnimationTimer, EntityDeadLocation, Vitality};
+use crate::common::components::{AnimationIndices, AnimationTimer, EntityLocation, Vitality};
 use crate::common::resources::{GameAudio, GameTextures};
 use crate::common::utils::{animate_sprite, animate_sprite_single};
 use crate::common::{SCROLL_X_VELOCITY, SCROLL_Y_VELOCITY};
 
 use crate::player::actions::ControlAction;
 use crate::player::bundles::{PlayerBundle, PlayerDeadBundle};
-use crate::player::components::{Fireball, Lives, Player, PlayerDead, PlayerVariant};
+use crate::player::components::{
+    Fireball, Lives, Player, PlayerDead, PlayerDeadLocation, PlayerVariant,
+};
 use crate::player::{
     PLAYER1_SPRITE, PLAYER2_SPRITE, PLAYER_FIREBALL_SCALE, PLAYER_FIREBALL_SIZE, PLAYER_SCALE,
     PLAYER_SIZE, PLAYER_SPEED,
 };
 
-use crate::enemy::components::{Enemy, EnemyDead, EnemyVariant};
+use crate::enemy::bundles::EnemyDeadLocationBundle;
+use crate::enemy::components::{Enemy, EnemyDeadLocation, EnemyVariant};
 use crate::enemy::ENEMY1_SPRITE;
-use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
+
+use crate::score::resources::PlayerOneScore;
 
 use crate::common::components::{Movable, Velocity};
 use crate::common::{BASE_SPEED, TIME_STEP};
@@ -42,7 +46,7 @@ pub fn player_spawn_system(
 
     // Player 1
     commands.spawn(PlayerBundle {
-        player: Player,
+        entity: Player,
         variant: PlayerVariant::One,
         lives: Lives::default(),
         vitality: Vitality::Alive,
@@ -66,7 +70,7 @@ pub fn player_spawn_system(
 
     // Player 2
     commands.spawn(PlayerBundle {
-        player: Player,
+        entity: Player,
         variant: PlayerVariant::Two,
         lives: Lives::default(),
         vitality: Vitality::Alive,
@@ -280,15 +284,14 @@ pub fn player_fireball_hit_enemy_system(
     // iterate through the lasers
     for (fireball_entity, fireball_transform) in fireball_query.iter() {
         // iterate through the enemies
-        for (enemy_entity, enemy_type, enemy_vitality, enemy_transform) in enemy_query.iter_mut() {
+        for (enemy_entity, enemy_variant, enemy_vitality, enemy_transform) in enemy_query.iter_mut()
+        {
             if despawned_entities.contains(&enemy_entity)
                 || despawned_entities.contains(&fireball_entity)
                 || enemy_vitality == &Vitality::Dead
             {
                 continue;
             }
-
-            // let enemy_scale = enemy_transform.scale.xy();
 
             // determine if collision
             let collision = collide(
@@ -316,23 +319,18 @@ pub fn player_fireball_hit_enemy_system(
                     commands.entity(fireball_entity).despawn();
                     despawned_entities.insert(fireball_entity);
 
-                    let dead_enemy_spawn_type = match enemy_type {
-                        &EnemyVariant::Skelton => EnemyVariant::Skelton,
-                        &EnemyVariant::Zombie => EnemyVariant::Zombie,
-                    };
+                    // update score
+                    player_one_score.value += 1;
 
-                    commands.spawn((
-                        EntityDeadLocation(Vec3::new(
+                    commands.spawn(EnemyDeadLocationBundle {
+                        entity: EnemyDeadLocation,
+                        variant: enemy_variant.clone(),
+                        location: EntityLocation(Vec3::new(
                             enemy_transform.translation.x,
                             enemy_transform.translation.y,
                             0.0,
                         )),
-                        EnemyDead,
-                        dead_enemy_spawn_type,
-                    ));
-
-                    // update score
-                    player_one_score.value += 1;
+                    });
 
                     break;
                 }
@@ -344,12 +342,12 @@ pub fn player_fireball_hit_enemy_system(
 pub fn player_dead_spawn_system(
     mut commands: Commands,
     game_textures: Res<GameTextures>,
-    enemy_query: Query<(Entity, &EntityDeadLocation)>,
+    enemy_query: Query<(Entity, &EntityLocation), With<PlayerDeadLocation>>,
 ) {
     for (player_dead_entity, player_dead_location) in enemy_query.iter() {
         // spawn the dead enemy sprite
         commands.spawn(PlayerDeadBundle {
-            player_dead: PlayerDead,
+            entity: PlayerDead,
             animation_indices: AnimationIndices {
                 first: 10,
                 last: 13,
@@ -376,7 +374,7 @@ pub fn player_dead_spawn_system(
     }
 }
 
-pub fn player_dead_animation_system(
+pub fn player_dead_movement_system(
     mut commands: Commands,
     time: Res<Time>,
     mut player_dead_query: Query<

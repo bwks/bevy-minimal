@@ -10,7 +10,7 @@ use crate::common::SpriteSheet;
 use crate::game::states::GameState;
 use crate::player::actions::ControlAction;
 use crate::player::systems::{
-    fireball_movement_system, player_confinement_system, player_dead_animation_system,
+    fireball_movement_system, player_confinement_system, player_dead_movement_system,
     player_dead_spawn_system, player_fire_system, player_fireball_hit_enemy_system,
     player_movement_system, player_respawn_system, player_spawn_system,
 };
@@ -104,8 +104,8 @@ impl Plugin for PlayerPlugin {
                     player_fire_system,
                     fireball_movement_system,
                     player_fireball_hit_enemy_system,
-                    player_dead_animation_system,
                     player_dead_spawn_system,
+                    player_dead_movement_system,
                 )
                     .in_set(PlayerSystemSet),
             )

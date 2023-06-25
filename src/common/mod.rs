@@ -1,6 +1,5 @@
 pub mod components;
 pub mod resources;
-pub mod systems;
 pub mod utils;
 
 pub const TIME_STEP: f32 = 1.0 / 60.0;

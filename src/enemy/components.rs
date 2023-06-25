@@ -3,12 +3,16 @@ use bevy::prelude::*;
 #[derive(Component)]
 pub struct Enemy;
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone, Copy)]
 pub enum EnemyVariant {
     #[default]
     Zombie,
     Skelton,
+    Goblin,
 }
+
+#[derive(Component)]
+pub struct EnemyDeadLocation;
 
 #[derive(Component)]
 pub struct EnemyDead;

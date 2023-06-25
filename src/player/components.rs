@@ -25,3 +25,6 @@ pub struct Fireball;
 
 #[derive(Component)]
 pub struct PlayerDead;
+
+#[derive(Component)]
+pub struct PlayerDeadLocation;

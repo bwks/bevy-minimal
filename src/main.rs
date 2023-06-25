@@ -9,17 +9,23 @@ pub mod world;
 use bevy::prelude::*;
 use bevy::window::WindowMode;
 
-use crate::common::resources::{GameAudio, GameTextures};
-use crate::common::utils::{get_game_sound, get_texture_atlas};
+use common::resources::{GameAudio, GameTextures};
+use common::utils::{get_game_sound, get_texture_atlas};
+
+use power_up::DIAMOND_SPRITE;
 
 use enemy::EnemyPlugin;
-use enemy::{ENEMY1_DEAD_SPRITE, ENEMY1_SPRITE, ENEMY2_DEAD_SPRITE, ENEMY2_SPRITE};
+use enemy::{
+    ENEMY1_DEAD_SPRITE, ENEMY1_SPRITE, ENEMY2_DEAD_SPRITE, ENEMY2_SPRITE, ENEMY3_DEAD_SPRITE,
+    ENEMY3_SPRITE,
+};
 use game::GamePlugin;
 use player::{
     PlayerPlugin, BULLET_SPRITE, PLAYER1_DEAD_SPRITE, PLAYER1_GHOST_SPRITE, PLAYER1_SPRITE,
     PLAYER2_GHOST_SPRITE, PLAYER2_SPRITE,
 };
 
+use power_up::PowerUpPlugin;
 use score::ScorePlugin;
 use world::WorldPlugin;
 
@@ -56,8 +62,17 @@ pub fn setup_system(
     let enemy_skeleton_dead_texture_atlas = get_texture_atlas(ENEMY2_DEAD_SPRITE, &asset_server);
     let enemy_skeleton_dead_texture_handle = texture_atlases.add(enemy_skeleton_dead_texture_atlas);
 
+    let enemy_goblin_texture_atlas = get_texture_atlas(ENEMY3_SPRITE, &asset_server);
+    let enemy_goblin_texture_handle = texture_atlases.add(enemy_goblin_texture_atlas);
+
+    let enemy_goblin_dead_texture_atlas = get_texture_atlas(ENEMY3_DEAD_SPRITE, &asset_server);
+    let enemy_goblin_dead_texture_handle = texture_atlases.add(enemy_goblin_dead_texture_atlas);
+
     let bullet_texture_atlas = get_texture_atlas(BULLET_SPRITE, &asset_server);
     let bullet_texture_handle = texture_atlases.add(bullet_texture_atlas);
+
+    let diamond_texture_atlas = get_texture_atlas(DIAMOND_SPRITE, &asset_server);
+    let diamond_texture_handle = texture_atlases.add(diamond_texture_atlas);
 
     let game_textures = GameTextures {
         player_one: player1_texture_handle,
@@ -70,7 +85,10 @@ pub fn setup_system(
         enemy_zombie_dead: enemy_zombie_dead_texture_handle,
         enemy_skeleton: enemy_skeleton_texture_handle,
         enemy_skeleton_dead: enemy_skeleton_dead_texture_handle,
+        enemy_goblin: enemy_goblin_texture_handle,
+        enemy_goblin_dead: enemy_goblin_dead_texture_handle,
         bullet: bullet_texture_handle,
+        diamond: diamond_texture_handle,
     };
     commands.insert_resource(game_textures);
 
@@ -102,6 +120,7 @@ fn main() {
         .add_plugin(ScorePlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(EnemyPlugin)
+        .add_plugin(PowerUpPlugin)
         .add_startup_system(setup_system)
         .run();
 }

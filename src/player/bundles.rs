@@ -2,13 +2,21 @@ use bevy::prelude::*;
 
 use leafwing_input_manager::prelude::*;
 
-use crate::common::components::{AnimationIndices, AnimationTimer, Movable, Velocity, Vitality};
+use crate::common::components::{
+    AnimationIndices, AnimationTimer, EntityLocation, Movable, Velocity, Vitality,
+};
 use crate::player::actions::ControlAction;
-use crate::player::components::{Lives, Player, PlayerDead, PlayerVariant};
+use crate::player::components::{Lives, Player, PlayerDead, PlayerDeadLocation, PlayerVariant};
+
+#[derive(Bundle)]
+pub struct PlayerDeadLocationBundle {
+    pub entity: PlayerDeadLocation,
+    pub location: EntityLocation,
+}
 
 #[derive(Bundle)]
 pub struct PlayerDeadBundle {
-    pub player_dead: PlayerDead,
+    pub entity: PlayerDead,
     pub animation_indices: AnimationIndices,
     pub animation_timer: AnimationTimer,
     pub movable: Movable,
@@ -20,15 +28,13 @@ pub struct PlayerDeadBundle {
 
 #[derive(Bundle)]
 pub struct PlayerBundle {
-    pub player: Player,
+    pub entity: Player,
     pub variant: PlayerVariant,
     pub lives: Lives,
     pub vitality: Vitality,
     pub animation_indices: AnimationIndices,
     pub animation_timer: AnimationTimer,
 
-    // This bundle must be added to your player entity
-    // (or whatever else you wish to control)
     #[bundle]
     pub input_manager: InputManagerBundle<ControlAction>,
 

@@ -12,7 +12,10 @@ pub struct GameTextures {
     pub enemy_zombie_dead: Handle<TextureAtlas>,
     pub enemy_skeleton: Handle<TextureAtlas>,
     pub enemy_skeleton_dead: Handle<TextureAtlas>,
+    pub enemy_goblin: Handle<TextureAtlas>,
+    pub enemy_goblin_dead: Handle<TextureAtlas>,
     pub bullet: Handle<TextureAtlas>,
+    pub diamond: Handle<TextureAtlas>,
 }
 
 #[derive(Resource)]

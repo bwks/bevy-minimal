@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+pub mod bundles;
 pub mod components;
 pub mod resources;
 pub mod systems;
@@ -7,7 +8,7 @@ pub mod systems;
 use crate::common::SpriteSheet;
 use crate::enemy::resources::EnemySpawnTimer;
 use crate::enemy::systems::{
-    enemies_spawn_over_time_system, enemy_dead_animation_system, enemy_dead_spawn_system,
+    enemies_spawn_over_time_system, enemy_dead_movement_system, enemy_dead_spawn_system,
     enemy_hit_player_system, enemy_movement_system, enemy_spawn_system,
     enemy_spawn_timer_tick_system, respawn_enemy_system,
 };
@@ -49,6 +50,24 @@ pub const ENEMY2_DEAD_SPRITE: SpriteSheet = SpriteSheet {
     rows: 1,
 };
 
+pub const ENEMY3_SPRITE: SpriteSheet = SpriteSheet {
+    file: "goblin-walk.png",
+    width: 150.0,
+    height: 150.0,
+    scale: 2.5,
+    columns: 8,
+    rows: 1,
+};
+
+pub const ENEMY3_DEAD_SPRITE: SpriteSheet = SpriteSheet {
+    file: "goblin-dead.png",
+    width: 150.0,
+    height: 150.0,
+    scale: 2.5,
+    columns: 4,
+    rows: 1,
+};
+
 pub const ENEMY_SPAWN_TIME: f32 = 2.0;
 pub const NUMBER_OF_ENEMIES: u8 = 10;
 
@@ -68,7 +87,7 @@ impl Plugin for EnemyPlugin {
                     enemies_spawn_over_time_system,
                     enemy_hit_player_system,
                     enemy_dead_spawn_system,
-                    enemy_dead_animation_system,
+                    enemy_dead_movement_system,
                 )
                     .in_set(EnemySystemSet),
             )

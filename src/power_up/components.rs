@@ -4,3 +4,6 @@ use bevy::prelude::Component;
 /// invincible for 30 seconds.
 #[derive(Component)]
 pub struct Mushroom;
+
+#[derive(Component)]
+pub struct Diamond;

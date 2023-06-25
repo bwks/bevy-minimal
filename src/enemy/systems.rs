@@ -2,22 +2,24 @@ use std::collections::HashSet;
 
 use rand::Rng;
 
-use crate::enemy::components::{Enemy, EnemyDead, EnemyVariant};
+use crate::enemy::bundles::{EnemyBundle, EnemyDeadBundle};
+use crate::enemy::components::{Enemy, EnemyDead, EnemyDeadLocation, EnemyVariant};
 use crate::enemy::resources::EnemySpawnTimer;
 use crate::enemy::{
-    ENEMY1_DEAD_SPRITE, ENEMY1_SPRITE, ENEMY2_DEAD_SPRITE, ENEMY2_SPRITE, NUMBER_OF_ENEMIES,
+    ENEMY1_DEAD_SPRITE, ENEMY1_SPRITE, ENEMY2_DEAD_SPRITE, ENEMY2_SPRITE, ENEMY3_DEAD_SPRITE,
+    ENEMY3_SPRITE, NUMBER_OF_ENEMIES,
 };
-
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
-use crate::player::components::{Lives, Player, PlayerVariant};
+use crate::player::bundles::PlayerDeadLocationBundle;
+use crate::player::components::{Lives, Player, PlayerDeadLocation, PlayerVariant};
 use crate::player::PLAYER_SIZE;
 
 use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
 
 use crate::common::components::{
-    AnimationIndices, AnimationTimer, EntityDeadLocation, Movable, Velocity, Vitality,
+    AnimationIndices, AnimationTimer, EntityLocation, Movable, Velocity, Vitality,
 };
 use crate::common::resources::{GameAudio, GameTextures};
 use crate::common::utils::{animate_sprite, animate_sprite_single};
@@ -39,12 +41,16 @@ pub fn enemy_spawn_system(
         let mut rng = rand::thread_rng();
 
         let flip = rng.gen_range(0.0..10.0);
-        let enemy_type = match flip > 5.0 {
-            true => EnemyVariant::Zombie,
-            false => EnemyVariant::Skelton,
+
+        #[allow(illegal_floating_point_literal_pattern)]
+        let enemy_variant = match flip {
+            0.0..=3.0 => EnemyVariant::Zombie,
+            3.1..=7.0 => EnemyVariant::Skelton,
+            7.1..=10.0 => EnemyVariant::Goblin,
+            _ => EnemyVariant::Zombie,
         };
 
-        let (enemy_sprite, enemy_texture, animation_indices, flip_x) = match enemy_type {
+        let (enemy_sprite, enemy_texture, animation_indices, flip_x) = match enemy_variant {
             EnemyVariant::Zombie => (
                 ENEMY1_SPRITE,
                 game_textures.enemy_zombie.clone(),
@@ -60,6 +66,12 @@ pub fn enemy_spawn_system(
                 AnimationIndices { first: 0, last: 12 },
                 true,
             ),
+            EnemyVariant::Goblin => (
+                ENEMY3_SPRITE,
+                game_textures.enemy_goblin.clone(),
+                AnimationIndices { first: 0, last: 7 },
+                true,
+            ),
         };
 
         let animation_timer = Timer::from_seconds(10.0, TimerMode::Repeating);
@@ -67,8 +79,18 @@ pub fn enemy_spawn_system(
         let random_width = rng.gen_range(spawn_area_width_start..spawn_area_width_end);
         let random_height = rng.gen_range(spawn_area_height_start..spawn_area_height_end);
 
-        commands.spawn((
-            SpriteSheetBundle {
+        commands.spawn(EnemyBundle {
+            entity: Enemy,
+            variant: enemy_variant,
+            vitality: Vitality::Alive,
+            animation_indices: animation_indices,
+            animation_timer: AnimationTimer(animation_timer.clone()),
+            movable: Movable { auto_despawn: true },
+            velocity: Velocity {
+                x: rng.gen_range(0.01..0.1),
+                y: rng.gen_range(0.01..0.1),
+            },
+            sprite_sheet: SpriteSheetBundle {
                 texture_atlas: enemy_texture,
                 sprite: TextureAtlasSprite::new(animation_indices.first),
                 // transform: Transform::from_scale(Vec3::splat(3.0)),
@@ -84,17 +106,7 @@ pub fn enemy_spawn_system(
                 },
                 ..Default::default()
             },
-            Enemy,
-            enemy_type,
-            animation_indices,
-            AnimationTimer(animation_timer.clone()),
-            Vitality::Alive,
-            Movable { auto_despawn: true },
-            Velocity {
-                x: rng.gen_range(0.01..0.1),
-                y: rng.gen_range(0.01..0.1),
-            },
-        ));
+        });
     }
 }
 
@@ -221,23 +233,26 @@ pub fn enemy_hit_player_system(
                 let player_radius = PLAYER_SIZE.0 / 2.0;
                 let enemy_radius = ENEMY1_SPRITE.width / 2.0;
                 if distance < player_radius + enemy_radius {
-                    // Spawn dead body
-
                     let player_ghost_sprite_atlas = match player {
                         PlayerVariant::One => game_textures.player_one_ghost.clone(),
                         PlayerVariant::Two => game_textures.player_two_ghost.clone(),
                     };
 
-                    commands.spawn(EntityDeadLocation(Vec3::new(
-                        player_transform.translation.x,
-                        player_transform.translation.y,
-                        0.0,
-                    )));
-
+                    audio.play(game_audio.player_dead.clone());
                     *player_vitality = Vitality::Dead;
                     player_lives.count -= 1;
                     *sprite_handle = player_ghost_sprite_atlas;
-                    audio.play(game_audio.player_dead.clone());
+
+                    // Spawn dead body
+                    commands.spawn(PlayerDeadLocationBundle {
+                        entity: PlayerDeadLocation,
+                        location: EntityLocation(Vec3::new(
+                            player_transform.translation.x,
+                            player_transform.translation.y,
+                            0.0,
+                        )),
+                    });
+
                     break;
                 }
             }
@@ -248,66 +263,83 @@ pub fn enemy_hit_player_system(
 pub fn enemy_dead_spawn_system(
     mut commands: Commands,
     game_textures: Res<GameTextures>,
-    enemy_query: Query<(Entity, &EnemyVariant, &EntityDeadLocation), With<EnemyDead>>,
+    enemy_query: Query<(Entity, &EnemyVariant, &EntityLocation), With<EnemyDeadLocation>>,
 ) {
     for (enemy_dead_entity, enemy_type, enemy_dead_location) in enemy_query.iter() {
         // spawn the dead enemy sprite
 
-        let (enemy_sprite, enemy_texture, dead_enemy_spawn_type, animation_indices, flip_x) =
-            match enemy_type {
-                EnemyVariant::Zombie => (
-                    ENEMY1_DEAD_SPRITE,
-                    game_textures.enemy_zombie_dead.clone(),
-                    EnemyVariant::Zombie,
-                    AnimationIndices {
-                        first: 24,
-                        last: 30,
-                    },
-                    false,
-                ),
-                EnemyVariant::Skelton => (
-                    ENEMY2_DEAD_SPRITE,
-                    game_textures.enemy_skeleton_dead.clone(),
-                    EnemyVariant::Skelton,
-                    AnimationIndices { first: 0, last: 14 },
-                    true,
-                ),
-            };
+        let (
+            enemy_sprite,
+            enemy_texture,
+            dead_enemy_variant,
+            animation_indices,
+            animation_timer,
+            flip_x,
+        ) = match enemy_type {
+            EnemyVariant::Zombie => (
+                ENEMY1_DEAD_SPRITE,
+                game_textures.enemy_zombie_dead.clone(),
+                EnemyVariant::Zombie,
+                AnimationIndices {
+                    first: 24,
+                    last: 30,
+                },
+                AnimationTimer(Timer::from_seconds(0.05, TimerMode::Repeating)),
+                false,
+            ),
+            EnemyVariant::Skelton => (
+                ENEMY2_DEAD_SPRITE,
+                game_textures.enemy_skeleton_dead.clone(),
+                EnemyVariant::Skelton,
+                AnimationIndices { first: 0, last: 14 },
+                AnimationTimer(Timer::from_seconds(0.03, TimerMode::Repeating)),
+                true,
+            ),
+            EnemyVariant::Goblin => (
+                ENEMY3_DEAD_SPRITE,
+                game_textures.enemy_goblin_dead.clone(),
+                EnemyVariant::Goblin,
+                AnimationIndices { first: 0, last: 3 },
+                AnimationTimer::default(),
+                true,
+            ),
+        };
 
-        commands.spawn((
-            SpriteSheetBundle {
-                texture_atlas: enemy_texture,
-                sprite: TextureAtlasSprite::new(animation_indices.first),
-                transform: Transform {
-                    translation: enemy_dead_location.0,
-                    scale: Vec3::splat(enemy_sprite.scale),
-                    rotation: if flip_x {
-                        Quat::from_rotation_y(std::f32::consts::PI)
-                    } else {
-                        Quat::IDENTITY
+        commands.spawn({
+            EnemyDeadBundle {
+                entity: EnemyDead,
+                variant: dead_enemy_variant,
+                animation_indices: animation_indices,
+                animation_timer: animation_timer,
+                movable: Movable { auto_despawn: true },
+                velocity: Velocity {
+                    x: SCROLL_X_VELOCITY,
+                    y: SCROLL_Y_VELOCITY,
+                },
+                sprite_sheet: SpriteSheetBundle {
+                    texture_atlas: enemy_texture,
+                    sprite: TextureAtlasSprite::new(animation_indices.first),
+                    transform: Transform {
+                        translation: enemy_dead_location.0,
+                        scale: Vec3::splat(enemy_sprite.scale),
+                        rotation: if flip_x {
+                            Quat::from_rotation_y(std::f32::consts::PI)
+                        } else {
+                            Quat::IDENTITY
+                        },
+                        ..Default::default()
                     },
                     ..Default::default()
                 },
-                ..Default::default()
-            },
-            dead_enemy_spawn_type,
-            Vitality::Dead,
-            EnemyDead,
-            AnimationTimer::default(),
-            animation_indices,
-            Movable { auto_despawn: true },
-            Velocity {
-                x: SCROLL_X_VELOCITY,
-                y: SCROLL_Y_VELOCITY,
-            },
-        ));
+            }
+        });
 
         // despawn the EnemyDeadToSpawn
         commands.entity(enemy_dead_entity).despawn();
     }
 }
 
-pub fn enemy_dead_animation_system(
+pub fn enemy_dead_movement_system(
     mut commands: Commands,
     time: Res<Time>,
     mut enemy_query: Query<

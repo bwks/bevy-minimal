@@ -34,4 +34,4 @@ impl Default for AnimationTimer {
 }
 
 #[derive(Component)]
-pub struct EntityDeadLocation(pub Vec3);
+pub struct EntityLocation(pub Vec3);
