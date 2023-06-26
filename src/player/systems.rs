@@ -23,6 +23,7 @@ use crate::player::{
 };
 
 use crate::item::components::{ItemPower, ItemVariant, PowerUp};
+use crate::item::resources::DiamondPowerTimer;
 use crate::item::DIAMOND_SPRITE;
 
 use crate::enemy::bundles::EnemyDeadLocationBundle;
@@ -219,17 +220,42 @@ pub fn player_movement_system(
             }
         }
 
-        if direction.length() > 0.0 {
-            if item_power.diamond {
-                *sprite_handle = game_textures.player_diamond.clone();
-            }
+        if item_power.diamond {
+            *sprite_handle = game_textures.player_diamond.clone();
+        }
 
+        if direction.length() > 0.0 {
             animate_sprite(&mut sprite, &animation_indices, &mut animation_timer, &time)
         } else {
-            sprite.index = 11;
+            if item_power.diamond {
+                animate_sprite(&mut sprite, &animation_indices, &mut animation_timer, &time)
+            } else {
+                sprite.index = 11;
+            }
         }
 
         player_transform.translation += direction * PLAYER_SPEED * time.delta_seconds();
+    }
+}
+
+pub fn player_diamond_power_system(
+    mut player_query: Query<(&PlayerVariant, &mut Handle<TextureAtlas>, &ItemPower), With<Player>>,
+    game_textures: Res<GameTextures>,
+    diamond_power_timer: Res<DiamondPowerTimer>,
+) {
+    for (player_variant, mut sprite_handle, item_power) in player_query.iter_mut() {
+        // animation_timer.0.tick(time.delta());
+        // if animation_timer.0.finished() {
+        // diamond_power_timer.0.tick(time.delta());
+        let player_texture = match player_variant {
+            PlayerVariant::One => game_textures.player_one.clone(),
+            PlayerVariant::Two => game_textures.player_two.clone(),
+        };
+        if diamond_power_timer.timer.finished() {
+            if item_power.diamond {
+                *sprite_handle = player_texture;
+            }
+        }
     }
 }
 

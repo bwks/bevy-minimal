@@ -84,3 +84,10 @@ pub fn power_up_animation_system(
         )
     }
 }
+
+pub fn diamond_power_timer_tick_system(
+    mut diamond_power_timer: ResMut<DiamondSpawnTimer>,
+    time: Res<Time>,
+) {
+    diamond_power_timer.timer.tick(time.delta());
+}
