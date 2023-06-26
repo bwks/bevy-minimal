@@ -239,23 +239,23 @@ pub fn player_movement_system(
 }
 
 pub fn player_diamond_power_system(
-    mut player_query: Query<(&PlayerVariant, &mut Handle<TextureAtlas>, &ItemPower), With<Player>>,
+    mut player_query: Query<
+        (&PlayerVariant, &mut Handle<TextureAtlas>, &mut ItemPower),
+        With<Player>,
+    >,
     game_textures: Res<GameTextures>,
     diamond_power_timer: Res<DiamondPowerTimer>,
 ) {
-    for (player_variant, mut sprite_handle, item_power) in player_query.iter_mut() {
-        // animation_timer.0.tick(time.delta());
-        // if animation_timer.0.finished() {
-        // diamond_power_timer.0.tick(time.delta());
+    for (player_variant, mut sprite_handle, mut item_power) in player_query.iter_mut() {
         let player_texture = match player_variant {
             PlayerVariant::One => game_textures.player_one.clone(),
             PlayerVariant::Two => game_textures.player_two.clone(),
         };
         if diamond_power_timer.timer.finished() {
-            if item_power.diamond {
-                *sprite_handle = player_texture;
-            }
+            item_power.diamond = false;
+            *sprite_handle = player_texture;
         }
+        break;
     }
 }
 
@@ -494,6 +494,7 @@ pub fn player_hit_power_up_system(
     // score: Res<Score>,
     _game_audio: Res<GameAudio>,
     _audio: Res<Audio>,
+    mut diamond_power_timer: ResMut<DiamondPowerTimer>,
 ) {
     // println!("number of power ups: {}", power_up_query.iter().len());
     for (power_up_entity, power_up_transform) in power_up_query.iter() {
@@ -516,6 +517,7 @@ pub fn player_hit_power_up_system(
                 if distance < player_radius + power_up_radius {
                     item_power.diamond = true;
                     commands.entity(power_up_entity).despawn();
+                    diamond_power_timer.timer.reset();
 
                     break;
                 }

@@ -24,7 +24,7 @@ pub struct DiamondPowerTimer {
 impl Default for DiamondPowerTimer {
     fn default() -> Self {
         Self {
-            timer: Timer::from_seconds(DIAMOND_SPAWN_TIME, TimerMode::Once),
+            timer: Timer::from_seconds(DIAMOND_POWER_TIME, TimerMode::Once),
         }
     }
 }
