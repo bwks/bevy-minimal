@@ -22,7 +22,7 @@ use enemy::{
 use game::GamePlugin;
 use player::{
     PlayerPlugin, BULLET_SPRITE, PLAYER1_DEAD_SPRITE, PLAYER1_GHOST_SPRITE, PLAYER1_SPRITE,
-    PLAYER2_GHOST_SPRITE, PLAYER2_SPRITE,
+    PLAYER2_GHOST_SPRITE, PLAYER2_SPRITE, PLAYER_DIAMOND_SPRITE,
 };
 
 use item::PowerUpPlugin;
@@ -49,6 +49,9 @@ pub fn setup_system(
 
     let player2_ghost_texture_atlas = get_texture_atlas(PLAYER2_GHOST_SPRITE, &asset_server);
     let player2_ghost_texture_handle = texture_atlases.add(player2_ghost_texture_atlas);
+
+    let player_diamond_texture_atlas = get_texture_atlas(PLAYER_DIAMOND_SPRITE, &asset_server);
+    let player_diamond_texture_handle = texture_atlases.add(player_diamond_texture_atlas);
 
     let enemy_zombie_texture_atlas = get_texture_atlas(ENEMY1_SPRITE, &asset_server);
     let enemy_zombie_texture_handle = texture_atlases.add(enemy_zombie_texture_atlas);
@@ -81,6 +84,7 @@ pub fn setup_system(
         player_two_dead: player1_dead_texture_handle.clone(),
         player_one_ghost: player1_ghost_texture_handle,
         player_two_ghost: player2_ghost_texture_handle,
+        player_diamond: player_diamond_texture_handle,
         enemy_zombie: enemy_zombie_texture_handle,
         enemy_zombie_dead: enemy_zombie_dead_texture_handle,
         enemy_skeleton: enemy_skeleton_texture_handle,

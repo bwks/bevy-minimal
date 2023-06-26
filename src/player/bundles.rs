@@ -8,6 +8,8 @@ use crate::common::components::{
 use crate::player::actions::ControlAction;
 use crate::player::components::{Lives, Player, PlayerDead, PlayerDeadLocation, PlayerVariant};
 
+use crate::item::components::ItemPower;
+
 #[derive(Bundle)]
 pub struct PlayerDeadLocationBundle {
     pub entity: PlayerDeadLocation,
@@ -34,6 +36,7 @@ pub struct PlayerBundle {
     pub vitality: Vitality,
     pub animation_indices: AnimationIndices,
     pub animation_timer: AnimationTimer,
+    pub item_power: ItemPower,
 
     #[bundle]
     pub input_manager: InputManagerBundle<ControlAction>,

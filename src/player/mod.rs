@@ -17,7 +17,7 @@ use crate::player::systems::{
 
 pub const PLAYER1_SPRITE: SpriteSheet = SpriteSheet {
     // file: "player1.png",
-    file: "player1-powerup.png",
+    file: "player1.png",
     width: 32.0,
     height: 32.0,
     scale: 3.0,
@@ -64,6 +64,16 @@ pub const PLAYER2_GHOST_SPRITE: SpriteSheet = SpriteSheet {
 
 pub const PLAYER1_DEAD_SPRITE: SpriteSheet = SpriteSheet {
     file: "player1-dead.png",
+    width: 32.0,
+    height: 32.0,
+    scale: 3.0,
+    columns: 5,
+    rows: 4,
+};
+
+pub const PLAYER_DIAMOND_SPRITE: SpriteSheet = SpriteSheet {
+    // file: "player1.png",
+    file: "player1-powerup.png",
     width: 32.0,
     height: 32.0,
     scale: 3.0,

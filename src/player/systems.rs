@@ -22,7 +22,7 @@ use crate::player::{
     PLAYER_SIZE, PLAYER_SPEED,
 };
 
-use crate::item::components::{ItemVariant, PowerUp};
+use crate::item::components::{ItemPower, ItemVariant, PowerUp};
 use crate::item::DIAMOND_SPRITE;
 
 use crate::enemy::bundles::EnemyDeadLocationBundle;
@@ -57,6 +57,7 @@ pub fn player_spawn_system(
         vitality: Vitality::Alive,
         animation_indices: animation_indices,
         animation_timer: AnimationTimer::default(),
+        item_power: ItemPower::default(),
         input_manager: InputManagerBundle {
             input_map: PlayerBundle::input_map(PlayerVariant::One),
             ..Default::default()
@@ -81,6 +82,7 @@ pub fn player_spawn_system(
         vitality: Vitality::Alive,
         animation_indices: animation_indices,
         animation_timer: AnimationTimer::default(),
+        item_power: ItemPower::default(),
         input_manager: InputManagerBundle {
             input_map: PlayerBundle::input_map(PlayerVariant::Two),
             ..Default::default()
@@ -174,11 +176,14 @@ pub fn player_movement_system(
             &AnimationIndices,
             &mut AnimationTimer,
             &mut TextureAtlasSprite,
+            &mut Handle<TextureAtlas>,
+            &ItemPower,
         ),
         With<Player>,
     >,
 
     time: Res<Time>,
+    game_textures: Res<GameTextures>,
 ) {
     for (
         mut player_transform,
@@ -186,6 +191,8 @@ pub fn player_movement_system(
         animation_indices,
         mut animation_timer,
         mut sprite,
+        mut sprite_handle,
+        item_power,
     ) in player_query.iter_mut()
     {
         let mut direction = Vec3::ZERO;
@@ -213,6 +220,10 @@ pub fn player_movement_system(
         }
 
         if direction.length() > 0.0 {
+            if item_power.diamond {
+                *sprite_handle = game_textures.player_diamond.clone();
+            }
+
             animate_sprite(&mut sprite, &animation_indices, &mut animation_timer, &time)
         } else {
             sprite.index = 11;
@@ -448,6 +459,7 @@ pub fn player_hit_power_up_system(
             &mut Lives,
             &Transform,
             &mut Handle<TextureAtlas>,
+            &mut ItemPower,
         ),
         (With<Player>, Without<PowerUp>),
     >,
@@ -466,6 +478,7 @@ pub fn player_hit_power_up_system(
             mut player_lives,
             player_transform,
             mut sprite_handle,
+            mut item_power,
         ) in player_query.iter_mut()
         {
             if *player_vitality == Vitality::Alive {
@@ -475,9 +488,8 @@ pub fn player_hit_power_up_system(
                 let player_radius = PLAYER_SIZE.0 / 2.0;
                 let power_up_radius = DIAMOND_SPRITE.width / 2.0;
                 if distance < player_radius + power_up_radius {
-                    println!("GOT A DIAMOND");
-                    commands.entity(power_up_entity).despawn_recursive();
-                    // commands.entity(player_entity).despawn();
+                    item_power.diamond = true;
+                    commands.entity(power_up_entity).despawn();
 
                     break;
                 }

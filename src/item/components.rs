@@ -16,3 +16,9 @@ pub enum ItemVariant {
     Diamond,
     Mushroom,
 }
+
+#[derive(Component, Default)]
+pub struct ItemPower {
+    pub diamond: bool,
+    pub mushroom: bool,
+}
