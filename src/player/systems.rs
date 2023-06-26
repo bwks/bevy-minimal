@@ -9,7 +9,7 @@ use leafwing_input_manager::InputManagerBundle;
 
 use crate::common::components::{AnimationIndices, AnimationTimer, EntityLocation, Vitality};
 use crate::common::resources::{GameAudio, GameTextures};
-use crate::common::utils::{animate_sprite, animate_sprite_single};
+use crate::common::utils::{animate_sprite, animate_sprite_single, get_texture_atlas};
 use crate::common::{SCROLL_X_VELOCITY, SCROLL_Y_VELOCITY};
 
 use crate::player::actions::ControlAction;
@@ -33,6 +33,8 @@ use crate::score::resources::PlayerOneScore;
 
 use crate::common::components::{Movable, Velocity};
 use crate::common::{BASE_SPEED, TIME_STEP};
+
+use super::PLAYER1_IDLE_SPRITE;
 
 pub fn player_spawn_system(
     mut commands: Commands,
