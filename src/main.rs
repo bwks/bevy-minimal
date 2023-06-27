@@ -25,7 +25,7 @@ use player::{
     PLAYER2_GHOST_SPRITE, PLAYER2_SPRITE, PLAYER_DIAMOND_SPRITE,
 };
 
-use item::PowerUpPlugin;
+use item::ItemPlugin;
 use score::ScorePlugin;
 use world::WorldPlugin;
 
@@ -124,7 +124,7 @@ fn main() {
         .add_plugin(ScorePlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(EnemyPlugin)
-        .add_plugin(PowerUpPlugin)
+        .add_plugin(ItemPlugin)
         .add_startup_system(setup_system)
         .run();
 }

@@ -135,13 +135,23 @@ pub fn player_respawn_system(
 
 pub fn player_fire_system(
     mut commands: Commands,
-    player_query: Query<(&Transform, &ActionState<ControlAction>, &Vitality), With<Player>>,
+    player_query: Query<
+        (
+            &Transform,
+            &ActionState<ControlAction>,
+            &Vitality,
+            &ItemPower,
+        ),
+        With<Player>,
+    >,
     game_textures: Res<GameTextures>,
     game_audio: Res<GameAudio>,
     audio: Res<Audio>,
 ) {
-    for (player_transform, player_fire_action, player_state) in player_query.iter() {
-        if *player_state == Vitality::Alive && player_fire_action.just_pressed(ControlAction::Fire)
+    for (player_transform, player_fire_action, player_state, item_power) in player_query.iter() {
+        if *player_state == Vitality::Alive
+            && !item_power.diamond
+            && player_fire_action.just_pressed(ControlAction::Fire)
         {
             let (player_x, player_y) = (
                 player_transform.translation.x,
@@ -251,7 +261,7 @@ pub fn player_diamond_power_system(
             PlayerVariant::One => game_textures.player_one.clone(),
             PlayerVariant::Two => game_textures.player_two.clone(),
         };
-        if diamond_power_timer.timer.finished() {
+        if diamond_power_timer.timer.just_finished() {
             item_power.diamond = false;
             *sprite_handle = player_texture;
         }

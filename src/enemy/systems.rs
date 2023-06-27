@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use rand::Rng;
 
-use crate::enemy::bundles::{EnemyBundle, EnemyDeadBundle};
+use crate::enemy::bundles::{EnemyBundle, EnemyDeadBundle, EnemyDeadLocationBundle};
 use crate::enemy::components::{Enemy, EnemyDead, EnemyDeadLocation, EnemyVariant};
 use crate::enemy::resources::EnemySpawnTimer;
 use crate::enemy::{
@@ -24,6 +24,8 @@ use crate::common::components::{
 use crate::common::resources::{GameAudio, GameTextures};
 use crate::common::utils::{animate_sprite, animate_sprite_single};
 use crate::common::{BASE_SPEED, SCROLL_X_VELOCITY, SCROLL_Y_VELOCITY, TIME_STEP};
+
+use crate::item::components::ItemPower;
 
 pub fn enemy_spawn_system(
     mut commands: Commands,
@@ -213,18 +215,25 @@ pub fn enemy_hit_player_system(
             &mut Lives,
             &Transform,
             &mut Handle<TextureAtlas>,
+            &ItemPower,
         ),
         (With<Player>, Without<Enemy>),
     >,
-    enemy_query: Query<&Transform, (With<Enemy>, Without<Player>)>,
+    enemy_query: Query<(Entity, &EnemyVariant, &Transform), (With<Enemy>, Without<Player>)>,
     game_textures: Res<GameTextures>,
-    // score: Res<Score>,
+    mut player_one_score: ResMut<PlayerOneScore>,
     game_audio: Res<GameAudio>,
     audio: Res<Audio>,
 ) {
-    for enemy_transform in enemy_query.iter() {
-        for (player, mut player_vitality, mut player_lives, player_transform, mut sprite_handle) in
-            player_query.iter_mut()
+    for (enemy_entity, enemy_variant, enemy_transform) in enemy_query.iter() {
+        for (
+            player,
+            mut player_vitality,
+            mut player_lives,
+            player_transform,
+            mut sprite_handle,
+            item_power,
+        ) in player_query.iter_mut()
         {
             if *player_vitality == Vitality::Alive {
                 let distance = player_transform
@@ -233,27 +242,46 @@ pub fn enemy_hit_player_system(
                 let player_radius = PLAYER_SIZE.0 / 2.0;
                 let enemy_radius = ENEMY1_SPRITE.width / 2.0;
                 if distance < player_radius + enemy_radius {
-                    let player_ghost_sprite_atlas = match player {
-                        PlayerVariant::One => game_textures.player_one_ghost.clone(),
-                        PlayerVariant::Two => game_textures.player_two_ghost.clone(),
-                    };
+                    if item_power.diamond {
+                        audio.play(game_audio.enemy_dead.clone());
 
-                    audio.play(game_audio.player_dead.clone());
-                    *player_vitality = Vitality::Dead;
-                    player_lives.count -= 1;
-                    *sprite_handle = player_ghost_sprite_atlas;
+                        commands.entity(enemy_entity).despawn();
 
-                    // Spawn dead body
-                    commands.spawn(PlayerDeadLocationBundle {
-                        entity: PlayerDeadLocation,
-                        location: EntityLocation {
-                            x: player_transform.translation.x,
-                            y: player_transform.translation.y,
-                            z: 0.0,
-                        },
-                    });
+                        // update score
+                        player_one_score.value += 1;
 
-                    break;
+                        commands.spawn(EnemyDeadLocationBundle {
+                            entity: EnemyDeadLocation,
+                            variant: enemy_variant.clone(),
+                            location: EntityLocation {
+                                x: enemy_transform.translation.x,
+                                y: enemy_transform.translation.y,
+                                z: 0.0,
+                            },
+                        });
+                    } else {
+                        let player_ghost_sprite_atlas = match player {
+                            PlayerVariant::One => game_textures.player_one_ghost.clone(),
+                            PlayerVariant::Two => game_textures.player_two_ghost.clone(),
+                        };
+
+                        audio.play(game_audio.player_dead.clone());
+                        *player_vitality = Vitality::Dead;
+                        player_lives.count -= 1;
+
+                        *sprite_handle = player_ghost_sprite_atlas;
+
+                        // Spawn dead body
+                        commands.spawn(PlayerDeadLocationBundle {
+                            entity: PlayerDeadLocation,
+                            location: EntityLocation {
+                                x: player_transform.translation.x,
+                                y: player_transform.translation.y,
+                                z: 0.0,
+                            },
+                        });
+                        break;
+                    }
                 }
             }
         }

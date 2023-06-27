@@ -13,6 +13,8 @@ use crate::item::systems::{
     power_up_animation_system,
 };
 
+use crate::game::states::GameState;
+
 pub const DIAMOND_SPRITE: SpriteSheet = SpriteSheet {
     file: "diamond.png",
     width: 18.0,
@@ -25,17 +27,23 @@ pub const DIAMOND_SPRITE: SpriteSheet = SpriteSheet {
 pub const DIAMOND_SPAWN_TIME: f32 = 10.0;
 pub const DIAMOND_POWER_TIME: f32 = 10.0;
 
-pub struct PowerUpPlugin;
+#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
+pub struct ItemSystemSet;
+pub struct ItemPlugin;
 
-impl Plugin for PowerUpPlugin {
+impl Plugin for ItemPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<DiamondSpawnTimer>()
             .init_resource::<DiamondPowerTimer>()
-            .add_systems((
-                diamond_spawn_system,
-                diamond_spawn_timer_tick_system,
-                power_up_animation_system,
-                diamond_power_timer_tick_system,
-            ));
+            .configure_set(ItemSystemSet.run_if(in_state(GameState::Playing)))
+            .add_systems(
+                (
+                    diamond_spawn_system,
+                    diamond_spawn_timer_tick_system,
+                    power_up_animation_system,
+                    diamond_power_timer_tick_system,
+                )
+                    .in_set(ItemSystemSet),
+            );
     }
 }
