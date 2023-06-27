@@ -32,17 +32,14 @@ pub fn diamond_spawn_system(
 
     let diamond_count = diamond_qeury.iter().count();
 
-    println!("player_powered: {player_powered}");
-    println!("diamond_count: {diamond_count}");
-
     if !player_powered && diamond_count == 0 {
         if diamond_spawn_timer.timer.finished() {
             let window = window_query.get_single().unwrap();
 
             let (spawn_area_width_start, spawn_area_width_end) =
-                (-window.width() / 2.0, window.width() / 2.0);
+                (-window.width() / 2.0 + 20.0, window.width() / 2.0 - 20.0);
             let (spawn_area_height_start, spawn_area_height_end) =
-                (-window.height() / 2.0, window.height() / 2.0);
+                (-window.height() / 2.0 + 20.0, window.height() / 2.0 - 20.0);
 
             let mut rng = rand::thread_rng();
 

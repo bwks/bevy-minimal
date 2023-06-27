@@ -22,7 +22,7 @@ pub const DIAMOND_SPRITE: SpriteSheet = SpriteSheet {
     rows: 1,
 };
 
-pub const DIAMOND_SPAWN_TIME: f32 = 2.0;
+pub const DIAMOND_SPAWN_TIME: f32 = 10.0;
 pub const DIAMOND_POWER_TIME: f32 = 10.0;
 
 pub struct PowerUpPlugin;
