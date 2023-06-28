@@ -256,12 +256,12 @@ pub fn player_diamond_power_system(
             PlayerVariant::One => game_textures.player_one.clone(),
             PlayerVariant::Two => game_textures.player_two.clone(),
         };
-        if diamond_power_timer.timer.just_finished() {
+        if diamond_power_timer.timer.just_finished() && item_power.diamond {
             item_power.diamond = false;
             *sprite_handle = player_texture;
             // audio.pause().fade_out(AudioTween::default());
+            break;
         }
-        break;
     }
 }
 
