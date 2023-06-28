@@ -13,7 +13,31 @@ opt-level = 1
 [profile.dev.package."*"]
 opt-level = 3
 
+
+[features]
+default = [
+  "bevy/animation",
+  "bevy/bevy_asset",
+  "bevy/bevy_scene",
+  "bevy/bevy_winit",
+  "bevy/bevy_core_pipeline",
+  "bevy/bevy_pbr",
+  "bevy/bevy_gltf",
+  "bevy/bevy_render",
+  "bevy/bevy_sprite",
+  "bevy/bevy_text",
+  "bevy/bevy_ui",
+  "bevy/png",
+  "bevy/hdr",
+  "bevy/zstd",
+  "bevy/x11",
+  "bevy/ktx2",
+  "bevy/filesystem_watcher",
+  "bevy/tonemapping_luts",
+]
+
 [dependencies]
-bevy = "0.10.1"
+bevy = { version = "0.10.1", default-features = false }
+bevy_kira_audio = { version = "0.15" }
 rand = "0.8.5"
 leafwing-input-manager = "0.9.2"

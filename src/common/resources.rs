@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use bevy_kira_audio::AudioSource;
+
 #[derive(Resource, Default)]
 pub struct GameTextures {
     pub player_one: Handle<TextureAtlas>,
@@ -24,6 +26,7 @@ pub struct GameAudio {
     pub player_dead: Handle<AudioSource>,
     pub player_shoot: Handle<AudioSource>,
     pub enemy_dead: Handle<AudioSource>,
+    pub diamond_powerup: Handle<AudioSource>,
 }
 
 // #[derive(Resource)]

@@ -7,7 +7,14 @@ pub mod score;
 pub mod world;
 
 use bevy::prelude::*;
-use bevy::window::WindowMode;
+use bevy::sprite::TextureAtlas;
+use bevy::DefaultPlugins;
+// use bevy::prelude::*;
+use bevy::window::{Window, WindowMode, WindowPlugin};
+
+// use bevy_kira_audio::prelude::Audio;
+use bevy_kira_audio::prelude::*;
+use bevy_kira_audio::AudioSource;
 
 use common::resources::{GameAudio, GameTextures};
 use common::utils::{get_game_sound, get_texture_atlas};
@@ -100,11 +107,13 @@ pub fn setup_system(
     let player_dead_sound = get_game_sound("dead.ogg", &asset_server);
     let player_shoot_sound = get_game_sound("shoot.ogg", &asset_server);
     let enemy_dead_sound = get_game_sound("zombie-die.ogg", &asset_server);
+    let diamond_powerup_sound = get_game_sound("diamond-powerup.ogg", &asset_server);
 
     let game_sounds = GameAudio {
         player_dead: player_dead_sound,
         player_shoot: player_shoot_sound,
         enemy_dead: enemy_dead_sound,
+        diamond_powerup: diamond_powerup_sound,
     };
     commands.insert_resource(game_sounds);
 }
@@ -119,6 +128,7 @@ fn main() {
             }),
             ..Default::default()
         }))
+        .add_plugin(AudioPlugin)
         .add_plugin(GamePlugin)
         .add_plugin(WorldPlugin)
         .add_plugin(ScorePlugin)
@@ -126,5 +136,12 @@ fn main() {
         .add_plugin(EnemyPlugin)
         .add_plugin(ItemPlugin)
         .add_startup_system(setup_system)
+        // .add_system(start_background_audio.on_startup())
         .run();
 }
+
+// fn start_background_audio(asset_server: Res<AssetServer>, audio: Res<Audio>) {
+//     audio
+//         .play(asset_server.load("diamond-powerup.ogg"))
+//         .looped();
+// }

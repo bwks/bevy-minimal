@@ -6,4 +6,4 @@
  - Menu system
 
  # Fixes
-  - Fix dead entity spawning
+ - Kira audio

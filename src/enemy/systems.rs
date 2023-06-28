@@ -2,6 +2,12 @@ use std::collections::HashSet;
 
 use rand::Rng;
 
+use bevy::prelude::*;
+use bevy::window::PrimaryWindow;
+
+use bevy_kira_audio::prelude::Audio;
+use bevy_kira_audio::AudioControl;
+
 use crate::enemy::bundles::{EnemyBundle, EnemyDeadBundle, EnemyDeadLocationBundle};
 use crate::enemy::components::{Enemy, EnemyDead, EnemyDeadLocation, EnemyVariant};
 use crate::enemy::resources::EnemySpawnTimer;
@@ -9,8 +15,6 @@ use crate::enemy::{
     ENEMY1_DEAD_SPRITE, ENEMY1_SPRITE, ENEMY2_DEAD_SPRITE, ENEMY2_SPRITE, ENEMY3_DEAD_SPRITE,
     ENEMY3_SPRITE, NUMBER_OF_ENEMIES,
 };
-use bevy::prelude::*;
-use bevy::window::PrimaryWindow;
 
 use crate::player::bundles::PlayerDeadLocationBundle;
 use crate::player::components::{Lives, Player, PlayerDeadLocation, PlayerVariant};
@@ -248,7 +252,7 @@ pub fn enemy_hit_player_system(
                         commands.entity(enemy_entity).despawn();
 
                         // update score
-                        player_one_score.value += 1;
+                        player_one_score.value += 10;
 
                         commands.spawn(EnemyDeadLocationBundle {
                             entity: EnemyDeadLocation,

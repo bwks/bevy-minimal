@@ -25,7 +25,7 @@ pub const DIAMOND_SPRITE: SpriteSheet = SpriteSheet {
 };
 
 pub const DIAMOND_SPAWN_TIME: f32 = 10.0;
-pub const DIAMOND_POWER_TIME: f32 = 10.0;
+pub const DIAMOND_POWER_TIME: f32 = 60.0;
 
 #[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
 pub struct ItemSystemSet;
