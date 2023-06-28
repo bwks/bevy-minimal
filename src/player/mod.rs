@@ -92,12 +92,6 @@ pub const BULLET_SPRITE: SpriteSheet = SpriteSheet {
 };
 
 pub const PLAYER_SPEED: f32 = 500.0;
-pub const PLAYER_SIZE: (f32, f32) = (17.0, 30.0); // (x, y)
-pub const PLAYER_SCALE: f32 = 2.0;
-pub const PLAYER_FIRE_KEY: KeyCode = KeyCode::J;
-pub const PLAYER_FIREBALL_SPRITE: &str = "fireball-right.png";
-pub const PLAYER_FIREBALL_SIZE: (f32, f32) = (75.0, 47.0);
-pub const PLAYER_FIREBALL_SCALE: f32 = 0.3;
 
 #[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
 pub struct PlayerSystemSet;

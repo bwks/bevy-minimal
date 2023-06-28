@@ -20,10 +20,7 @@ use crate::player::bundles::{PlayerBundle, PlayerDeadBundle};
 use crate::player::components::{
     Fireball, Lives, Player, PlayerDead, PlayerDeadLocation, PlayerVariant,
 };
-use crate::player::{
-    PLAYER1_SPRITE, PLAYER2_SPRITE, PLAYER_FIREBALL_SCALE, PLAYER_FIREBALL_SIZE, PLAYER_SCALE,
-    PLAYER_SIZE, PLAYER_SPEED,
-};
+use crate::player::{BULLET_SPRITE, PLAYER1_SPRITE, PLAYER2_SPRITE, PLAYER_SPEED};
 
 use crate::item::components::{ItemPower, ItemVariant, PowerUp};
 use crate::item::resources::DiamondPowerTimer;
@@ -150,7 +147,7 @@ pub fn player_fire_system(
                 player_transform.translation.x,
                 player_transform.translation.y,
             );
-            let x_offset = PLAYER_SIZE.0 / 2.0 * PLAYER_SCALE + 10.0;
+            let x_offset = PLAYER1_SPRITE.width / 2.0 * PLAYER1_SPRITE.scale + 10.0;
 
             commands.spawn((
                 SpriteSheetBundle {
@@ -273,10 +270,10 @@ pub fn player_confinement_system(
     for mut player_transform in player_query.iter_mut() {
         let window = window_query.get_single().unwrap();
 
-        let left_window_edge = -window.width() / 2.0 + PLAYER_SIZE.0 + 5.0;
-        let right_window_edge = window.width() / 2.0 - PLAYER_SIZE.0 - 5.0;
-        let bottom_window_edge = -window.height() / 2.0 + PLAYER_SIZE.1 + 5.0;
-        let top_window_edge = window.height() / 2.0 - PLAYER_SIZE.1 - 5.0;
+        let left_window_edge = -window.width() / 2.0 + PLAYER1_SPRITE.width / 2.0;
+        let right_window_edge = window.width() / 2.0 - PLAYER1_SPRITE.width / 2.0;
+        let bottom_window_edge = -window.height() / 2.0 + PLAYER1_SPRITE.height;
+        let top_window_edge = window.height() / 2.0 - PLAYER1_SPRITE.height;
 
         // let mut translation = player_transform.translation;
         let mut player_x = player_transform.translation.x;
@@ -350,8 +347,8 @@ pub fn player_fireball_hit_enemy_system(
             let collision = collide(
                 fireball_transform.translation,
                 Vec2::new(
-                    PLAYER_FIREBALL_SIZE.0 * PLAYER_FIREBALL_SCALE,
-                    PLAYER_FIREBALL_SIZE.1 * PLAYER_FIREBALL_SCALE,
+                    BULLET_SPRITE.width * BULLET_SPRITE.scale,
+                    BULLET_SPRITE.height * BULLET_SPRITE.scale,
                 ),
                 enemy_transform.translation,
                 Vec2::new(ENEMY1_SPRITE.width, ENEMY1_SPRITE.height),
@@ -518,7 +515,7 @@ pub fn player_hit_power_up_system(
                 let distance = player_transform
                     .translation
                     .distance(power_up_transform.translation);
-                let player_radius = PLAYER_SIZE.0 / 2.0;
+                let player_radius = PLAYER1_SPRITE.width / 2.0;
                 let power_up_radius = DIAMOND_SPRITE.width / 2.0;
                 if distance < player_radius + power_up_radius {
                     item_power.diamond = true;

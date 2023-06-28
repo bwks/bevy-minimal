@@ -18,7 +18,7 @@ use crate::enemy::{
 
 use crate::player::bundles::PlayerDeadLocationBundle;
 use crate::player::components::{Lives, Player, PlayerDeadLocation, PlayerVariant};
-use crate::player::PLAYER_SIZE;
+use crate::player::PLAYER1_SPRITE;
 
 use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
 
@@ -243,7 +243,7 @@ pub fn enemy_hit_player_system(
                 let distance = player_transform
                     .translation
                     .distance(enemy_transform.translation);
-                let player_radius = PLAYER_SIZE.0 / 2.0;
+                let player_radius = PLAYER1_SPRITE.width / 2.0;
                 let enemy_radius = ENEMY1_SPRITE.width / 2.0;
                 if distance < player_radius + enemy_radius {
                     if item_power.diamond {
