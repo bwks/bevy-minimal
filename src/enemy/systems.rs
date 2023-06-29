@@ -151,7 +151,7 @@ pub fn enemy_movement_system(
         (Entity, &Velocity, &mut Transform, &Movable),
         (With<Enemy>, Without<EnemyDead>),
     >,
-    player_query: Query<&Transform, (With<Player>, Without<Enemy>)>,
+    player_query: Query<(&Transform, &Vitality), (With<Player>, Without<Enemy>)>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     mut player_one_score: ResMut<PlayerOneScore>,
     mut player_two_score: ResMut<PlayerTwoScore>,
@@ -168,16 +168,20 @@ pub fn enemy_movement_system(
     let window = window_query.get_single().unwrap();
     let mut despawned_entities: HashSet<Entity> = HashSet::new();
 
-    for player_transform in player_query.iter() {
-        let player_y = player_transform.translation.y;
+    for (enemy_entity, velocity, mut enemy_transform, movable) in enemy_query.iter_mut() {
+        let enemy_translation = &mut enemy_transform.translation;
+        enemy_translation.x -= velocity.x * TIME_STEP * BASE_SPEED * 2.0 + 1.0;
 
-        for (enemy_entity, velocity, mut enemy_transform, movable) in enemy_query.iter_mut() {
-            if despawned_entities.contains(&enemy_entity) {
+        for (player_transform, player_vitality) in player_query.iter() {
+            if *player_vitality == Vitality::Dead {
                 continue;
             }
 
-            let enemy_translation = &mut enemy_transform.translation;
-            enemy_translation.x -= velocity.x * TIME_STEP * BASE_SPEED / 2.0 + 1.0;
+            let player_y = player_transform.translation.y;
+
+            if despawned_entities.contains(&enemy_entity) {
+                continue;
+            }
 
             let mut rng = rand::thread_rng();
             let flip = rng.gen_range(0.0..10.0);
