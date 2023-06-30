@@ -20,8 +20,6 @@ use crate::player::bundles::PlayerDeadLocationBundle;
 use crate::player::components::{Lives, Player, PlayerDeadLocation, PlayerVariant, Score};
 use crate::player::PLAYER1_SPRITE;
 
-use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
-
 use crate::common::components::{
     AnimationIndices, AnimationTimer, EntityLocation, Movable, Velocity, Vitality,
 };

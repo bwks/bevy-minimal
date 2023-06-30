@@ -12,7 +12,7 @@ use leafwing_input_manager::InputManagerBundle;
 
 use crate::common::components::{AnimationIndices, AnimationTimer, EntityLocation, Vitality};
 use crate::common::resources::{GameAudio, GameTextures};
-use crate::common::utils::{animate_sprite, animate_sprite_single, get_texture_atlas};
+use crate::common::utils::{animate_sprite, animate_sprite_single};
 use crate::common::{SCROLL_X_VELOCITY, SCROLL_Y_VELOCITY};
 
 use crate::player::actions::ControlAction;
@@ -22,7 +22,7 @@ use crate::player::components::{
 };
 use crate::player::{BULLET_SPRITE, PLAYER1_SPRITE, PLAYER2_SPRITE, PLAYER_SPEED};
 
-use crate::item::components::{ItemPower, ItemVariant, PowerUp};
+use crate::item::components::{ItemPower, PowerUp};
 use crate::item::resources::DiamondPowerTimer;
 use crate::item::DIAMOND_SPRITE;
 
@@ -494,36 +494,16 @@ pub fn player_dead_movement_system(
 pub fn player_hit_power_up_system(
     mut commands: Commands,
     mut player_query: Query<
-        (
-            Entity,
-            &PlayerVariant,
-            &mut Vitality,
-            &mut Lives,
-            &Transform,
-            &mut Handle<TextureAtlas>,
-            &mut ItemPower,
-        ),
+        (&mut Vitality, &Transform, &mut ItemPower),
         (With<Player>, Without<PowerUp>),
     >,
     power_up_query: Query<(Entity, &Transform), (With<PowerUp>, Without<Player>)>,
-    _game_textures: Res<GameTextures>,
-    // score: Res<Score>,
     game_audio: Res<GameAudio>,
     audio: Res<Audio>,
     mut diamond_power_timer: ResMut<DiamondPowerTimer>,
 ) {
-    // println!("number of power ups: {}", power_up_query.iter().len());
     for (power_up_entity, power_up_transform) in power_up_query.iter() {
-        for (
-            player_entity,
-            player,
-            mut player_vitality,
-            mut player_lives,
-            player_transform,
-            mut sprite_handle,
-            mut item_power,
-        ) in player_query.iter_mut()
-        {
+        for (player_vitality, player_transform, mut item_power) in player_query.iter_mut() {
             if *player_vitality == Vitality::Alive {
                 let distance = player_transform
                     .translation
@@ -538,8 +518,6 @@ pub fn player_hit_power_up_system(
                         .play(game_audio.diamond_powerup.clone())
                         .with_volume(0.5)
                         .fade_in(AudioTween::default());
-
-                    // audio.
                     break;
                 }
             }
