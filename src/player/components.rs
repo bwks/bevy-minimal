@@ -1,15 +1,26 @@
+use std::fmt;
+
 use bevy::prelude::*;
 
 #[derive(Component)]
 pub struct Player;
 
-#[derive(Component, Clone, Debug, PartialEq, Eq)]
+#[derive(Component, Clone, PartialEq, Eq)]
 pub enum PlayerVariant {
     One,
     Two,
 }
 
-#[derive(Component)]
+impl fmt::Display for PlayerVariant {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            PlayerVariant::One => write!(f, "1"),
+            PlayerVariant::Two => write!(f, "2"),
+        }
+    }
+}
+
+#[derive(Component, Debug)]
 pub struct Lives {
     pub count: u8,
 }

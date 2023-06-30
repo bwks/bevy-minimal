@@ -80,7 +80,8 @@ pub fn enemy_spawn_system(
             ),
         };
 
-        let animation_timer = Timer::from_seconds(10.0, TimerMode::Repeating);
+        // let animation_timer = Timer::from_seconds(10.0, TimerMode::Repeating);
+        let animation_timer = AnimationTimer::default();
 
         let random_width = rng.gen_range(spawn_area_width_start..spawn_area_width_end);
         let random_height = rng.gen_range(spawn_area_height_start..spawn_area_height_end);
@@ -148,32 +149,51 @@ pub fn enemies_spawn_over_time_system(
 pub fn enemy_movement_system(
     mut commands: Commands,
     mut enemy_query: Query<
-        (Entity, &Velocity, &mut Transform, &Movable),
-        (With<Enemy>, Without<EnemyDead>),
-    >,
-    player_query: Query<(&Transform, &Vitality), (With<Player>, Without<Enemy>)>,
-    window_query: Query<&Window, With<PrimaryWindow>>,
-    mut player_one_score: ResMut<PlayerOneScore>,
-    mut player_two_score: ResMut<PlayerTwoScore>,
-    mut enemy_animate_query: Query<
         (
+            Entity,
+            &Velocity,
+            &mut Transform,
+            &Movable,
             &AnimationIndices,
             &mut AnimationTimer,
             &mut TextureAtlasSprite,
         ),
-        With<Enemy>,
+        (With<Enemy>, Without<EnemyDead>),
     >,
+    mut player_query: Query<
+        (&Transform, &Vitality, &Lives, &mut Score),
+        (With<Player>, Without<Enemy>),
+    >,
+    window_query: Query<&Window, With<PrimaryWindow>>,
     time: Res<Time>,
 ) {
     let window = window_query.get_single().unwrap();
     let mut despawned_entities: HashSet<Entity> = HashSet::new();
 
-    for (enemy_entity, velocity, mut enemy_transform, movable) in enemy_query.iter_mut() {
+    for (
+        enemy_entity,
+        velocity,
+        mut enemy_transform,
+        movable,
+        enemy_animation_indices,
+        mut enemy_animation_timer,
+        mut enemy_sprite,
+    ) in enemy_query.iter_mut()
+    {
         let enemy_translation = &mut enemy_transform.translation;
         enemy_translation.x -= velocity.x * TIME_STEP * BASE_SPEED * 2.0 + 1.0;
 
-        for (player_transform, player_vitality) in player_query.iter() {
-            if *player_vitality == Vitality::Dead {
+        animate_sprite(
+            &mut enemy_sprite,
+            &enemy_animation_indices,
+            &mut enemy_animation_timer,
+            &time,
+        );
+
+        for (player_transform, player_vitality, player_lives, mut player_score) in
+            player_query.iter_mut()
+        {
+            if player_vitality == &Vitality::Dead && player_lives.count == 0 {
                 continue;
             }
 
@@ -192,9 +212,7 @@ pub fn enemy_movement_system(
                     false => enemy_translation.y -= velocity.y * TIME_STEP * BASE_SPEED / 2.0,
                 }
             }
-            for (indices, mut timer, mut sprite) in &mut enemy_animate_query {
-                animate_sprite(&mut sprite, &indices, &mut timer, &time)
-            }
+
             if movable.auto_despawn {
                 // despawn when out of screen
                 let window_margin = -window.width() / 2.0 - 20.0;
@@ -202,11 +220,8 @@ pub fn enemy_movement_system(
                     commands.entity(enemy_entity).despawn();
                     despawned_entities.insert(enemy_entity);
 
-                    if player_one_score.value > 0 {
-                        player_one_score.value -= 1;
-                    }
-                    if player_two_score.value > 0 {
-                        player_two_score.value -= 1;
+                    if player_score.value > 0 {
+                        player_score.value -= 1;
                     }
                 }
             }

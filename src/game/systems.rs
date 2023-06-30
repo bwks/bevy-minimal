@@ -140,7 +140,7 @@ pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>)
 }
 
 pub fn text_color_system(
-    player_query: Query<(&PlayerVariant, &Score), With<Player>>,
+    player_query: Query<(&PlayerVariant, &Score, &Lives), With<Player>>,
     time: Res<Time>,
     mut query: Query<(&mut Text, &PlayerVariant), With<ColorText>>,
 ) {
@@ -155,10 +155,18 @@ pub fn text_color_system(
             alpha: 1.0,
         };
 
-        for (player_variant, player_score) in player_query.iter() {
+        for (player_variant, player_score, player_lives) in player_query.iter() {
             if player_variant == score_player_variant {
-                text.sections[0].value =
-                    format!("Player {:#?}: {}", player_variant, player_score.value);
+                let lives = match player_lives.count {
+                    3 => "* * *",
+                    2 => "* *",
+                    1 => "*",
+                    _ => "",
+                };
+                text.sections[0].value = format!(
+                    "Player {}: {} {}",
+                    player_variant, player_score.value, lives
+                );
             }
         }
     }

@@ -255,8 +255,6 @@ pub fn player_diamond_power_system(
     >,
     game_textures: Res<GameTextures>,
     diamond_power_timer: Res<DiamondPowerTimer>,
-    game_audio: Res<GameAudio>,
-    audio: Res<Audio>,
 ) {
     for (player_variant, mut sprite_handle, mut item_power) in player_query.iter_mut() {
         let player_texture = match player_variant {
@@ -266,7 +264,6 @@ pub fn player_diamond_power_system(
         if diamond_power_timer.timer.just_finished() && item_power.diamond {
             item_power.diamond = false;
             *sprite_handle = player_texture;
-            // audio.pause().fade_out(AudioTween::default());
             break;
         }
     }
