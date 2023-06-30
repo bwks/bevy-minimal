@@ -30,12 +30,8 @@ use crate::enemy::bundles::EnemyDeadLocationBundle;
 use crate::enemy::components::{Enemy, EnemyDeadLocation, EnemyVariant};
 use crate::enemy::ENEMY1_SPRITE;
 
-use crate::score::resources::PlayerOneScore;
-
 use crate::common::components::{Movable, Velocity};
 use crate::common::{BASE_SPEED, TIME_STEP};
-
-use super::PLAYER1_IDLE_SPRITE;
 
 pub fn player_spawn_system(
     mut commands: Commands,
@@ -392,12 +388,6 @@ pub fn player_fireball_hit_enemy_system(
                     commands.entity(fireball_entity).despawn();
                     despawned_entities.insert(fireball_entity);
 
-                    // update score
-                    for (player_variant, player_score) in player_query.iter() {
-                        println!("player: {:#?}", player_variant);
-                        println!("player score: {}", player_score.value);
-                    }
-
                     commands.spawn(EnemyDeadLocationBundle {
                         entity: EnemyDeadLocation,
                         variant: enemy_variant.clone(),
@@ -412,10 +402,6 @@ pub fn player_fireball_hit_enemy_system(
                 }
             }
         }
-        // for (player_variant, player_score) in player_query.iter() {
-        //     println!("player: {:#?}", player_variant);
-        //     println!("player score: {}", player_score.value);
-        // }
     }
 }
 

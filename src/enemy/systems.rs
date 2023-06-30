@@ -230,7 +230,6 @@ pub fn enemy_hit_player_system(
     >,
     enemy_query: Query<(Entity, &EnemyVariant, &Transform), (With<Enemy>, Without<Player>)>,
     game_textures: Res<GameTextures>,
-    mut player_one_score: ResMut<PlayerOneScore>,
     game_audio: Res<GameAudio>,
     audio: Res<Audio>,
 ) {
@@ -258,11 +257,7 @@ pub fn enemy_hit_player_system(
                         commands.entity(enemy_entity).despawn();
 
                         // update score
-                        player_one_score.value += 10;
                         player_score.value += 10;
-
-                        println!("player: {:#?}", player);
-                        println!("player_score: {}", player_score.value);
 
                         commands.spawn(EnemyDeadLocationBundle {
                             entity: EnemyDeadLocation,

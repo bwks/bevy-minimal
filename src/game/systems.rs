@@ -8,8 +8,7 @@ use crate::enemy::components::Enemy;
 use crate::game::components::{ColorText, FpsText};
 use crate::game::states::GameState;
 use crate::player::actions::ControlAction;
-use crate::player::components::{Lives, Player};
-use crate::score::resources::PlayerOneScore;
+use crate::player::components::{Lives, Player, PlayerVariant, Score};
 
 pub fn spawn_camera_system(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
@@ -60,7 +59,7 @@ pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>)
         // Create a TextBundle that has a Text with a single section.
         TextBundle::from_section(
             // Accepts a `String` or any type that converts into a `String`, such as `&str`
-            "Player 1: 0",
+            "player1_score",
             TextStyle {
                 font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                 font_size: 50.0,
@@ -79,6 +78,7 @@ pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>)
             ..default()
         }),
         ColorText,
+        PlayerVariant::One,
     ));
 
     // 1
@@ -86,7 +86,7 @@ pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>)
         // Create a TextBundle that has a Text with a single section.
         TextBundle::from_section(
             // Accepts a `String` or any type that converts into a `String`, such as `&str`
-            "Player 2: 0",
+            "player2_score",
             TextStyle {
                 font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                 font_size: 50.0,
@@ -105,6 +105,7 @@ pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>)
             ..default()
         }),
         ColorText,
+        PlayerVariant::Two,
     ));
 
     // Text with multiple sections
@@ -139,28 +140,27 @@ pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>)
 }
 
 pub fn text_color_system(
-    player_one_score: Res<PlayerOneScore>,
-    // player_two_score: Res<PlayerTwoScore>,
+    player_query: Query<(&PlayerVariant, &Score), With<Player>>,
     time: Res<Time>,
-    mut query: Query<&mut Text, With<ColorText>>,
+    mut query: Query<(&mut Text, &PlayerVariant), With<ColorText>>,
 ) {
-    for mut text in &mut query.iter_mut() {
+    for (mut text, score_player_variant) in &mut query.iter_mut() {
         let seconds = time.elapsed_seconds();
 
         // Update the color of the first and only section.
-        // println!("text sections: {:#?}", text)
         text.sections[0].style.color = Color::Rgba {
             red: (1.25 * seconds).sin() / 2.0 + 0.5,
             green: (0.75 * seconds).sin() / 2.0 + 0.5,
             blue: (0.50 * seconds).sin() / 2.0 + 0.5,
             alpha: 1.0,
         };
-        if player_one_score.is_changed() {
-            text.sections[0].value = format!("Player 1: {}", player_one_score.value)
+
+        for (player_variant, player_score) in player_query.iter() {
+            if player_variant == score_player_variant {
+                text.sections[0].value =
+                    format!("Player {:#?}: {}", player_variant, player_score.value);
+            }
         }
-        // if player_two_score.is_changed() {
-        //     text.sections[1].value = format!("Player 2: {}", player_two_score.value)
-        // }
     }
 }
 
