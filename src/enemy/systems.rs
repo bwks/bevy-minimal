@@ -17,7 +17,7 @@ use crate::enemy::{
 };
 
 use crate::player::bundles::PlayerDeadLocationBundle;
-use crate::player::components::{Lives, Player, PlayerDeadLocation, PlayerVariant};
+use crate::player::components::{Lives, Player, PlayerDeadLocation, PlayerVariant, Score};
 use crate::player::PLAYER1_SPRITE;
 
 use crate::score::resources::{PlayerOneScore, PlayerTwoScore};
@@ -224,6 +224,7 @@ pub fn enemy_hit_player_system(
             &Transform,
             &mut Handle<TextureAtlas>,
             &ItemPower,
+            &mut Score,
         ),
         (With<Player>, Without<Enemy>),
     >,
@@ -241,6 +242,7 @@ pub fn enemy_hit_player_system(
             player_transform,
             mut sprite_handle,
             item_power,
+            mut player_score,
         ) in player_query.iter_mut()
         {
             if *player_vitality == Vitality::Alive {
@@ -257,6 +259,10 @@ pub fn enemy_hit_player_system(
 
                         // update score
                         player_one_score.value += 10;
+                        player_score.value += 10;
+
+                        println!("player: {:#?}", player);
+                        println!("player_score: {}", player_score.value);
 
                         commands.spawn(EnemyDeadLocationBundle {
                             entity: EnemyDeadLocation,

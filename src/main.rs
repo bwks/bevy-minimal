@@ -8,13 +8,10 @@ pub mod world;
 
 use bevy::prelude::*;
 use bevy::sprite::TextureAtlas;
-use bevy::DefaultPlugins;
-// use bevy::prelude::*;
 use bevy::window::{Window, WindowMode, WindowPlugin};
+use bevy::DefaultPlugins;
 
-// use bevy_kira_audio::prelude::Audio;
 use bevy_kira_audio::prelude::*;
-use bevy_kira_audio::AudioSource;
 
 use common::resources::{GameAudio, GameTextures};
 use common::utils::{get_game_sound, get_texture_atlas};

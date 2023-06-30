@@ -18,7 +18,7 @@ use crate::common::{SCROLL_X_VELOCITY, SCROLL_Y_VELOCITY};
 use crate::player::actions::ControlAction;
 use crate::player::bundles::{PlayerBundle, PlayerDeadBundle};
 use crate::player::components::{
-    Fireball, Lives, Player, PlayerDead, PlayerDeadLocation, PlayerVariant,
+    Fireball, Lives, Player, PlayerDead, PlayerDeadLocation, PlayerVariant, Score,
 };
 use crate::player::{BULLET_SPRITE, PLAYER1_SPRITE, PLAYER2_SPRITE, PLAYER_SPEED};
 
@@ -59,6 +59,7 @@ pub fn player_spawn_system(
         animation_indices: animation_indices,
         animation_timer: AnimationTimer::default(),
         item_power: ItemPower::default(),
+        score: Score::default(),
         input_manager: InputManagerBundle {
             input_map: PlayerBundle::input_map(PlayerVariant::One),
             ..Default::default()
@@ -84,6 +85,7 @@ pub fn player_spawn_system(
         animation_indices: animation_indices,
         animation_timer: AnimationTimer::default(),
         item_power: ItemPower::default(),
+        score: Score::default(),
         input_manager: InputManagerBundle {
             input_map: PlayerBundle::input_map(PlayerVariant::Two),
             ..Default::default()
@@ -135,12 +137,21 @@ pub fn player_respawn_system(
 
 pub fn player_fire_system(
     mut commands: Commands,
-    player_query: Query<(&Transform, &ActionState<ControlAction>, &Vitality), With<Player>>,
+    player_query: Query<
+        (
+            &Transform,
+            &ActionState<ControlAction>,
+            &Vitality,
+            &PlayerVariant,
+        ),
+        With<Player>,
+    >,
     game_textures: Res<GameTextures>,
     game_audio: Res<GameAudio>,
     audio: Res<Audio>,
 ) {
-    for (player_transform, player_fire_action, player_state) in player_query.iter() {
+    for (player_transform, player_fire_action, player_state, player_variant) in player_query.iter()
+    {
         if *player_state == Vitality::Alive && player_fire_action.just_pressed(ControlAction::Fire)
         {
             let (player_x, player_y) = (
@@ -148,6 +159,8 @@ pub fn player_fire_system(
                 player_transform.translation.y,
             );
             let x_offset = PLAYER1_SPRITE.width / 2.0 * PLAYER1_SPRITE.scale + 10.0;
+
+            // println!("{:#?}", player_variant);
 
             commands.spawn((
                 SpriteSheetBundle {
@@ -163,6 +176,7 @@ pub fn player_fire_system(
                 Fireball {},
                 Movable { auto_despawn: true },
                 Velocity { x: 1.0, y: 0.0 },
+                player_variant.clone(),
             ));
             audio.play(game_audio.player_shoot.clone());
         }
@@ -319,10 +333,10 @@ pub fn fireball_movement_system(
 
 pub fn player_fireball_hit_enemy_system(
     mut commands: Commands,
-    fireball_query: Query<(Entity, &Transform), With<Fireball>>,
+    fireball_query: Query<(Entity, &Transform, &PlayerVariant), With<Fireball>>,
+    mut player_query: Query<(&PlayerVariant, &mut Score), With<Player>>,
     mut enemy_query: Query<(Entity, &EnemyVariant, &Vitality, &Transform), With<Enemy>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
-    mut player_one_score: ResMut<PlayerOneScore>,
     game_audio: Res<GameAudio>,
     audio: Res<Audio>,
 ) {
@@ -332,7 +346,7 @@ pub fn player_fireball_hit_enemy_system(
     let mut despawned_entities: HashSet<Entity> = HashSet::new();
 
     // iterate through the lasers
-    for (fireball_entity, fireball_transform) in fireball_query.iter() {
+    for (fireball_entity, fireball_transform, fireball_player_variant) in fireball_query.iter() {
         // iterate through the enemies
         for (enemy_entity, enemy_variant, enemy_vitality, enemy_transform) in enemy_query.iter_mut()
         {
@@ -357,8 +371,17 @@ pub fn player_fireball_hit_enemy_system(
             // if enemy has entered the screen
             if enemy_transform.translation.x < world_right_edge {
                 // perform collision
+
                 if collision.is_some() {
                     // remove the enemy
+
+                    // println!("player_fireball_variant: {:#?}", fireball_player_variant);
+
+                    for (player_variant, mut player_score) in player_query.iter_mut() {
+                        if player_variant == fireball_player_variant {
+                            player_score.value += 1;
+                        }
+                    }
 
                     audio.play(game_audio.enemy_dead.clone());
 
@@ -370,7 +393,10 @@ pub fn player_fireball_hit_enemy_system(
                     despawned_entities.insert(fireball_entity);
 
                     // update score
-                    player_one_score.value += 1;
+                    for (player_variant, player_score) in player_query.iter() {
+                        println!("player: {:#?}", player_variant);
+                        println!("player score: {}", player_score.value);
+                    }
 
                     commands.spawn(EnemyDeadLocationBundle {
                         entity: EnemyDeadLocation,
@@ -386,6 +412,10 @@ pub fn player_fireball_hit_enemy_system(
                 }
             }
         }
+        // for (player_variant, player_score) in player_query.iter() {
+        //     println!("player: {:#?}", player_variant);
+        //     println!("player score: {}", player_score.value);
+        // }
     }
 }
 

@@ -6,7 +6,9 @@ use crate::common::components::{
     AnimationIndices, AnimationTimer, EntityLocation, Movable, Velocity, Vitality,
 };
 use crate::player::actions::ControlAction;
-use crate::player::components::{Lives, Player, PlayerDead, PlayerDeadLocation, PlayerVariant};
+use crate::player::components::{
+    Lives, Player, PlayerDead, PlayerDeadLocation, PlayerVariant, Score,
+};
 
 use crate::item::components::ItemPower;
 
@@ -37,6 +39,7 @@ pub struct PlayerBundle {
     pub animation_indices: AnimationIndices,
     pub animation_timer: AnimationTimer,
     pub item_power: ItemPower,
+    pub score: Score,
 
     #[bundle]
     pub input_manager: InputManagerBundle<ControlAction>,
