@@ -19,7 +19,7 @@ impl Plugin for GamePlugin {
             .add_state::<AppState>()
             .add_startup_system(spawn_camera_system)
             .add_startup_system(text_setup_system)
-            .add_system(text_update_system)
+            // .add_system(text_update_system)
             .add_system(text_color_system)
             .add_system(toggle_game_state_system)
             .add_system(exit_game_system)

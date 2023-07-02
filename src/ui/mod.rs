@@ -7,8 +7,8 @@ use bevy::prelude::*;
 
 use crate::game::states::AppState;
 use crate::ui::systems::{
-    interact_with_play_button_system, interact_with_quit_button_system, main_menu_despawn_system,
-    main_menu_spawn_system,
+    hud_spawn, interact_with_play_button_system, interact_with_quit_button_system,
+    main_menu_despawn_system, main_menu_spawn_system,
 };
 
 pub struct UIPlugin;
@@ -24,5 +24,6 @@ impl Plugin for UIPlugin {
                 )
                     .in_set(OnUpdate(AppState::MainMenu)),
             );
+        // .add_system(hud_spawn);
     }
 }

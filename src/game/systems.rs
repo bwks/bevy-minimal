@@ -158,7 +158,7 @@ pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>)
         .with_style(Style {
             position_type: PositionType::Absolute,
             position: UiRect {
-                top: Val::Px(70.0),
+                top: Val::Px(15.0),
                 left: Val::Px(15.0),
                 ..default()
             },
@@ -185,8 +185,8 @@ pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>)
         .with_style(Style {
             position_type: PositionType::Absolute,
             position: UiRect {
-                top: Val::Px(120.0),
-                left: Val::Px(15.0),
+                top: Val::Px(15.0),
+                right: Val::Px(15.0),
                 ..default()
             },
             ..default()
@@ -196,34 +196,34 @@ pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>)
     ));
 
     // Text with multiple sections
-    commands.spawn((
-        // Create a TextBundle that has a Text with a list of sections.
-        TextBundle::from_sections([
-            TextSection::new(
-                "FPS: ",
-                TextStyle {
-                    font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                    font_size: 30.0,
-                    color: Color::WHITE,
-                },
-            ),
-            TextSection::from_style(TextStyle {
-                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                font_size: 30.0,
-                color: Color::GOLD,
-            }),
-        ])
-        .with_style(Style {
-            position_type: PositionType::Absolute,
-            position: UiRect {
-                top: Val::Px(220.0),
-                left: Val::Px(15.0),
-                ..default()
-            },
-            ..default()
-        }),
-        FpsText,
-    ));
+    // commands.spawn((
+    //     // Create a TextBundle that has a Text with a list of sections.
+    //     TextBundle::from_sections([
+    //         TextSection::new(
+    //             "FPS: ",
+    //             TextStyle {
+    //                 font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+    //                 font_size: 30.0,
+    //                 color: Color::WHITE,
+    //             },
+    //         ),
+    //         TextSection::from_style(TextStyle {
+    //             font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+    //             font_size: 30.0,
+    //             color: Color::GOLD,
+    //         }),
+    //     ])
+    //     .with_style(Style {
+    //         position_type: PositionType::Absolute,
+    //         position: UiRect {
+    //             top: Val::Px(220.0),
+    //             left: Val::Px(15.0),
+    //             ..default()
+    //         },
+    //         ..default()
+    //     }),
+    //     FpsText,
+    // ));
 }
 
 pub fn text_color_system(
@@ -251,7 +251,7 @@ pub fn text_color_system(
                     _ => "",
                 };
                 text.sections[0].value = format!(
-                    "Player {}: {} {}",
+                    "Player {}\n {}\n {}",
                     player_variant, player_score.value, lives
                 );
             }
