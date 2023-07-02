@@ -1,7 +1,7 @@
 use bevy::app::AppExit;
 use bevy::prelude::*;
 
-use crate::game::states::AppState;
+use crate::game::states::{AppState, GameState};
 use crate::ui::components::{MainMenu, PlayButton, QuitButton};
 use crate::ui::styles::{
     BUTTON_STYLE, HOVERED_BUTTON_COLOR, IMAGE_STYLE, MAIN_MENU_STYLE, NORMAL_BUTTON_COLOR,
@@ -9,8 +9,12 @@ use crate::ui::styles::{
 };
 use crate::ui::utils::get_title_text_style;
 
-pub fn main_menu_spawn_system(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let main_menu_entity = build_main_menu(&mut commands, &asset_server);
+pub fn main_menu_spawn_system(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    game_state: Res<State<GameState>>,
+) {
+    let main_menu_entity = build_main_menu(&mut commands, &asset_server, &game_state);
 }
 
 pub fn main_menu_despawn_system(
@@ -22,7 +26,11 @@ pub fn main_menu_despawn_system(
     }
 }
 
-pub fn build_main_menu(commands: &mut Commands, asset_server: &Res<AssetServer>) -> Entity {
+pub fn build_main_menu(
+    commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
+    game_state: &Res<State<GameState>>,
+) -> Entity {
     let main_menu_entity = commands
         .spawn((
             NodeBundle {
@@ -79,7 +87,11 @@ pub fn build_main_menu(commands: &mut Commands, asset_server: &Res<AssetServer>)
                     parent.spawn(TextBundle {
                         text: Text {
                             sections: vec![TextSection::new(
-                                "Play",
+                                if game_state.0 != GameState::GameOver {
+                                    "Play"
+                                } else {
+                                    "Replay"
+                                },
                                 TextStyle {
                                     font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                                     font_size: 32.0,

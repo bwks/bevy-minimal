@@ -1,9 +1,12 @@
+use std::collections::HashSet;
+
 use bevy::app::AppExit;
 use bevy::diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::ActionState;
 
 use crate::common::components::Vitality;
+use crate::common::resources::GameTextures;
 use crate::enemy::components::Enemy;
 use crate::game::components::{ColorText, FpsText};
 use crate::game::states::{AppState, GameState};
@@ -22,68 +25,30 @@ pub fn toggle_game_state_system(
     mut app_state_next_state: ResMut<NextState<AppState>>,
     mut game_state_next_state: ResMut<NextState<GameState>>,
 ) {
-    for controller_input in controller_query.iter() {
-        if keyboard_input.just_pressed(KeyCode::Space)
-            || controller_input.just_pressed(ControlAction::Pause)
-        {
-            if app_state.0 != AppState::InGame {
-                app_state_next_state.set(AppState::InGame);
-
-                if game_state.0 != GameState::Playing {
-                    game_state_next_state.set(GameState::Playing)
+    if game_state.0 != GameState::GameOver {
+        for controller_input in controller_query.iter() {
+            if keyboard_input.just_pressed(KeyCode::Space)
+                || controller_input.just_pressed(ControlAction::Pause)
+            {
+                match app_state.0 {
+                    AppState::InGame => {
+                        game_state_next_state.set(GameState::Paused);
+                        app_state_next_state.set(AppState::MainMenu);
+                    }
+                    AppState::MainMenu => {
+                        app_state_next_state.set(AppState::InGame);
+                        game_state_next_state.set(GameState::Playing);
+                    }
                 }
             }
         }
     }
 }
-
-pub fn toggle_main_menu_state_system(
-    keyboard_input: Res<Input<KeyCode>>,
-    controller_query: Query<&ActionState<ControlAction>>,
-    app_state: Res<State<AppState>>,
-    game_state: Res<State<GameState>>,
-    mut app_state_next_state: ResMut<NextState<AppState>>,
-    mut game_state_next_state: ResMut<NextState<GameState>>,
-) {
-    for controller_input in controller_query.iter() {
-        if keyboard_input.just_pressed(KeyCode::Space)
-            || controller_input.just_pressed(ControlAction::Pause)
-        {
-            if app_state.0 != AppState::MainMenu {
-                if game_state.0 != GameState::Paused {
-                    game_state_next_state.set(GameState::Paused);
-                }
-                app_state_next_state.set(AppState::MainMenu);
-            }
-        }
-    }
-}
-
-// pub fn toggle_game_state_system(
-//     keyboard_input: Res<Input<KeyCode>>,
-//     controller_query: Query<&ActionState<ControlAction>>,
-//     game_state: Res<State<GameState>>,
-//     mut next_app_state: ResMut<NextState<GameState>>,
-// ) {
-//     for controller_input in controller_query.iter() {
-//         if keyboard_input.just_pressed(KeyCode::Space)
-//             || controller_input.just_pressed(ControlAction::Pause)
-//         {
-//             match game_state.0 {
-//                 GameState::Playing => {
-//                     next_app_state.set(GameState::Paused);
-//                 }
-//                 GameState::Paused => {
-//                     next_app_state.set(GameState::Playing);
-//                 }
-//             }
-//         }
-//     }
-// }
 
 pub fn game_over_system(
     player_query: Query<(&Vitality, &Lives), With<Player>>,
-    mut next_app_state: ResMut<NextState<GameState>>,
+    mut app_state_next_state: ResMut<NextState<AppState>>,
+    mut game_state_next_state: ResMut<NextState<GameState>>,
 ) {
     let mut dead_players = 0;
 
@@ -94,7 +59,84 @@ pub fn game_over_system(
     }
 
     if dead_players == 2 {
-        next_app_state.set(GameState::Paused);
+        game_state_next_state.set(GameState::GameOver);
+        app_state_next_state.set(AppState::MainMenu);
+    }
+}
+
+pub fn exit_game_system(
+    keyboard_input: Res<Input<KeyCode>>,
+    mut app_exit_event_writer: EventWriter<AppExit>,
+) {
+    if keyboard_input.just_pressed(KeyCode::Escape) {
+        app_exit_event_writer.send(AppExit);
+    }
+}
+
+pub fn restart_game_system(
+    mut commands: Commands,
+    mut player_query: Query<
+        (
+            &PlayerVariant,
+            &mut Vitality,
+            &mut Lives,
+            &mut Score,
+            &mut Handle<TextureAtlas>,
+            &ActionState<ControlAction>,
+        ),
+        With<Player>,
+    >,
+    enemy_query: Query<Entity, With<Enemy>>,
+    keyboard_input: Res<Input<KeyCode>>,
+    game_textures: Res<GameTextures>,
+    mut game_state_next_state: ResMut<NextState<GameState>>,
+    mut app_state_next_state: ResMut<NextState<AppState>>,
+) {
+    let mut restart_game = false;
+    for (
+        _player_variant,
+        mut _player_vitality,
+        mut _player_lives,
+        mut _player_score,
+        mut _player_sprite,
+        controller_input,
+    ) in player_query.iter()
+    {
+        if controller_input.just_pressed(ControlAction::Restart)
+            || keyboard_input.just_pressed(KeyCode::R)
+        {
+            restart_game = true;
+            break;
+        }
+    }
+
+    if restart_game {
+        for enemy_entity in enemy_query.iter() {
+            commands.entity(enemy_entity).despawn();
+        }
+
+        for (
+            player_variant,
+            mut player_vitality,
+            mut player_lives,
+            mut player_score,
+            mut player_sprite,
+            _controller_input,
+        ) in player_query.iter_mut()
+        {
+            let player_sprite_atlas = match player_variant {
+                PlayerVariant::One => game_textures.player_one.clone(),
+                PlayerVariant::Two => game_textures.player_two.clone(),
+            };
+
+            *player_sprite = player_sprite_atlas;
+
+            *player_vitality = Vitality::Alive;
+            player_lives.count = 3;
+            player_score.value = 0;
+            game_state_next_state.set(GameState::Playing);
+            app_state_next_state.set(AppState::InGame);
+        }
     }
 }
 
@@ -226,36 +268,6 @@ pub fn text_update_system(
             if let Some(value) = fps.smoothed() {
                 // Update the value of the second section
                 text.sections[1].value = format!("{value:.2}");
-            }
-        }
-    }
-}
-
-pub fn exit_game_system(
-    keyboard_input: Res<Input<KeyCode>>,
-    mut app_exit_event_writer: EventWriter<AppExit>,
-) {
-    if keyboard_input.just_pressed(KeyCode::Escape) {
-        app_exit_event_writer.send(AppExit);
-    }
-}
-
-pub fn restart_game_system(
-    mut commands: Commands,
-    player_query: Query<(Entity, &ActionState<ControlAction>), With<Player>>,
-    enemy_query: Query<Entity, With<Enemy>>,
-    keyboard_input: Res<Input<KeyCode>>,
-    // controller_query: Query<&ActionState<ControlAction>>,
-) {
-    for (player, controller_input) in player_query.iter() {
-        if controller_input.just_pressed(ControlAction::Restart)
-            || keyboard_input.just_pressed(KeyCode::F2)
-        {
-            // for player in player_query.iter() {
-            commands.entity(player).despawn();
-            // }
-            for entity in enemy_query.iter() {
-                commands.entity(entity).despawn();
             }
         }
     }
