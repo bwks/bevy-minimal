@@ -4,6 +4,7 @@ pub mod game;
 pub mod item;
 pub mod player;
 pub mod score;
+pub mod ui;
 pub mod world;
 
 use bevy::prelude::*;
@@ -31,6 +32,7 @@ use player::{
 
 use item::ItemPlugin;
 use score::ScorePlugin;
+use ui::UIPlugin;
 use world::WorldPlugin;
 
 pub fn setup_system(
@@ -125,8 +127,9 @@ fn main() {
             }),
             ..Default::default()
         }))
-        .add_plugin(AudioPlugin)
         .add_plugin(GamePlugin)
+        .add_plugin(UIPlugin)
+        .add_plugin(AudioPlugin)
         .add_plugin(WorldPlugin)
         .add_plugin(ScorePlugin)
         .add_plugin(PlayerPlugin)

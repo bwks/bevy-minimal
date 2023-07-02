@@ -4,6 +4,6 @@ pub struct ScorePlugin;
 
 impl Plugin for ScorePlugin {
     fn build(&self, _app: &mut App) {
-        todo!();
+        // _app;
     }
 }
