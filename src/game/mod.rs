@@ -8,8 +8,7 @@ use bevy::prelude::*;
 use crate::game::states::AppState;
 use crate::game::systems::{
     exit_game_system, game_over_system, spawn_camera_system, text_color_system, text_setup_system,
-    text_update_system, toggle_game_state_system, transition_to_game_state_system,
-    transition_to_main_menu_state_system,
+    text_update_system, toggle_game_state_system, toggle_main_menu_state_system,
 };
 
 pub struct GamePlugin;
@@ -25,7 +24,7 @@ impl Plugin for GamePlugin {
             .add_system(toggle_game_state_system)
             .add_system(exit_game_system)
             .add_system(game_over_system)
-            .add_system(transition_to_game_state_system)
-            .add_system(transition_to_main_menu_state_system);
+            .add_system(toggle_game_state_system)
+            .add_system(toggle_main_menu_state_system);
     }
 }

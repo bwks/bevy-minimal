@@ -14,53 +14,72 @@ pub fn spawn_camera_system(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 }
 
-pub fn transition_to_game_state_system(
-    keyboard_input: Res<Input<KeyCode>>,
-    app_state: Res<State<AppState>>,
-    mut app_state_next_state: ResMut<NextState<AppState>>,
-) {
-    if keyboard_input.just_pressed(KeyCode::G) {
-        if app_state.0 != AppState::InGame {
-            app_state_next_state.set(AppState::InGame);
-            println!("Entered AppState::Game");
-        }
-    }
-}
-
-pub fn transition_to_main_menu_state_system(
-    keyboard_input: Res<Input<KeyCode>>,
-    app_state: Res<State<AppState>>,
-    mut app_state_next_state: ResMut<NextState<AppState>>,
-) {
-    if keyboard_input.just_pressed(KeyCode::M) {
-        if app_state.0 != AppState::MainMenu {
-            app_state_next_state.set(AppState::MainMenu);
-            println!("Entered AppState::MainMenu");
-        }
-    }
-}
-
 pub fn toggle_game_state_system(
     keyboard_input: Res<Input<KeyCode>>,
     controller_query: Query<&ActionState<ControlAction>>,
+    app_state: Res<State<AppState>>,
     game_state: Res<State<GameState>>,
-    mut next_app_state: ResMut<NextState<GameState>>,
+    mut app_state_next_state: ResMut<NextState<AppState>>,
+    mut game_state_next_state: ResMut<NextState<GameState>>,
 ) {
     for controller_input in controller_query.iter() {
         if keyboard_input.just_pressed(KeyCode::Space)
             || controller_input.just_pressed(ControlAction::Pause)
         {
-            match game_state.0 {
-                GameState::Playing => {
-                    next_app_state.set(GameState::Paused);
-                }
-                GameState::Paused => {
-                    next_app_state.set(GameState::Playing);
+            if app_state.0 != AppState::InGame {
+                app_state_next_state.set(AppState::InGame);
+
+                if game_state.0 != GameState::Playing {
+                    game_state_next_state.set(GameState::Playing)
                 }
             }
         }
     }
 }
+
+pub fn toggle_main_menu_state_system(
+    keyboard_input: Res<Input<KeyCode>>,
+    controller_query: Query<&ActionState<ControlAction>>,
+    app_state: Res<State<AppState>>,
+    game_state: Res<State<GameState>>,
+    mut app_state_next_state: ResMut<NextState<AppState>>,
+    mut game_state_next_state: ResMut<NextState<GameState>>,
+) {
+    for controller_input in controller_query.iter() {
+        if keyboard_input.just_pressed(KeyCode::Space)
+            || controller_input.just_pressed(ControlAction::Pause)
+        {
+            if app_state.0 != AppState::MainMenu {
+                if game_state.0 != GameState::Paused {
+                    game_state_next_state.set(GameState::Paused);
+                }
+                app_state_next_state.set(AppState::MainMenu);
+            }
+        }
+    }
+}
+
+// pub fn toggle_game_state_system(
+//     keyboard_input: Res<Input<KeyCode>>,
+//     controller_query: Query<&ActionState<ControlAction>>,
+//     game_state: Res<State<GameState>>,
+//     mut next_app_state: ResMut<NextState<GameState>>,
+// ) {
+//     for controller_input in controller_query.iter() {
+//         if keyboard_input.just_pressed(KeyCode::Space)
+//             || controller_input.just_pressed(ControlAction::Pause)
+//         {
+//             match game_state.0 {
+//                 GameState::Playing => {
+//                     next_app_state.set(GameState::Paused);
+//                 }
+//                 GameState::Paused => {
+//                     next_app_state.set(GameState::Playing);
+//                 }
+//             }
+//         }
+//     }
+// }
 
 pub fn game_over_system(
     player_query: Query<(&Vitality, &Lives), With<Player>>,

@@ -26,7 +26,6 @@ pub fn build_main_menu(commands: &mut Commands, asset_server: &Res<AssetServer>)
     let main_menu_entity = commands
         .spawn((
             NodeBundle {
-                background_color: Color::rgb(0.35, 0.35, 0.35).into(),
                 style: MAIN_MENU_STYLE,
                 ..Default::default()
             },
@@ -41,16 +40,16 @@ pub fn build_main_menu(commands: &mut Commands, asset_server: &Res<AssetServer>)
                 })
                 .with_children(|parent| {
                     // Image 1
-                    parent.spawn(ImageBundle {
-                        style: IMAGE_STYLE,
-                        image: asset_server.load("zombie.png").into(),
-                        ..default()
-                    });
+                    // parent.spawn(ImageBundle {
+                    //     style: IMAGE_STYLE,
+                    //     image: asset_server.load("zombie.png").into(),
+                    //     ..default()
+                    // });
                     // Text
                     parent.spawn(TextBundle {
                         text: Text {
                             sections: vec![TextSection::new(
-                                "Zombie Game",
+                                "Monster Apocalypse",
                                 get_title_text_style(&asset_server),
                             )],
                             alignment: TextAlignment::Center,
@@ -59,11 +58,11 @@ pub fn build_main_menu(commands: &mut Commands, asset_server: &Res<AssetServer>)
                         ..default()
                     });
                     // Image 2
-                    parent.spawn(ImageBundle {
-                        style: IMAGE_STYLE,
-                        image: asset_server.load("zombie.png").into(),
-                        ..default()
-                    });
+                    // parent.spawn(ImageBundle {
+                    //     style: IMAGE_STYLE,
+                    //     image: asset_server.load("zombie.png").into(),
+                    //     ..default()
+                    // });
                 });
 
             // Play
