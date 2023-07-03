@@ -32,6 +32,46 @@ pub fn build_main_menu(commands: &mut Commands, asset_server: &Res<AssetServer>)
             MainMenu,
         ))
         .with_children(|parent| {
+            // === HUD ===
+            parent
+                .spawn(NodeBundle {
+                    background_color: Color::RED.into(),
+                    style: Style {
+                        flex_direction: FlexDirection::Row,
+                        justify_content: JustifyContent::Start,
+                        align_items: AlignItems::Start,
+                        size: Size::new(Val::Px(300.0), Val::Px(120.0)),
+                        ..Style::DEFAULT
+                    },
+                    ..default()
+                })
+                .with_children(|parent| {
+                    // Image 1
+                    // parent.spawn(ImageBundle {
+                    //     style: IMAGE_STYLE,
+                    //     image: asset_server.load("zombie.png").into(),
+                    //     ..default()
+                    // });
+                    // Text
+                    parent.spawn(TextBundle {
+                        text: Text {
+                            sections: vec![TextSection::new(
+                                "PLAYER 1",
+                                get_title_text_style(&asset_server),
+                            )],
+                            alignment: TextAlignment::Center,
+                            ..default()
+                        },
+                        ..default()
+                    });
+                    // Image 2
+                    // parent.spawn(ImageBundle {
+                    //     style: IMAGE_STYLE,
+                    //     image: asset_server.load("zombie.png").into(),
+                    //     ..default()
+                    // });
+                });
+
             // === Title ===
             parent
                 .spawn(NodeBundle {
