@@ -158,10 +158,7 @@ pub fn enemy_movement_system(
         ),
         (With<Enemy>, Without<EnemyDead>),
     >,
-    mut player_query: Query<
-        (&Transform, &Vitality, &Lives, &mut Score),
-        (With<Player>, Without<Enemy>),
-    >,
+    mut player_query: Query<(&Transform, &Vitality, &mut Score), (With<Player>, Without<Enemy>)>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     time: Res<Time>,
 ) {
@@ -188,14 +185,12 @@ pub fn enemy_movement_system(
             &time,
         );
 
-        for (player_transform, player_vitality, player_lives, mut player_score) in
-            player_query.iter_mut()
-        {
+        for (player_transform, player_vitality, mut player_score) in player_query.iter_mut() {
             if player_vitality == &Vitality::Dead {
                 continue;
             }
 
-            let player_y = player_transform.translation.y;
+            let player_translation = player_transform.translation;
 
             if despawned_entities.contains(&enemy_entity) {
                 continue;
@@ -204,8 +199,8 @@ pub fn enemy_movement_system(
             let mut rng = rand::thread_rng();
             let flip = rng.gen_range(0.0..10.0);
 
-            if flip > 5.0 {
-                match player_y > enemy_translation.y {
+            if flip > 5.0 && enemy_translation.x > player_translation.x {
+                match player_translation.y > enemy_translation.y {
                     true => enemy_translation.y += velocity.y * TIME_STEP * BASE_SPEED / 2.0,
                     false => enemy_translation.y -= velocity.y * TIME_STEP * BASE_SPEED / 2.0,
                 }
