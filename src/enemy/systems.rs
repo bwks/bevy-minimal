@@ -191,7 +191,7 @@ pub fn enemy_movement_system(
         for (player_transform, player_vitality, player_lives, mut player_score) in
             player_query.iter_mut()
         {
-            if player_vitality == &Vitality::Dead && player_lives.count == 0 {
+            if player_vitality == &Vitality::Dead {
                 continue;
             }
 

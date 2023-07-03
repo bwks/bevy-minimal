@@ -228,19 +228,19 @@ pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>)
 
 pub fn text_color_system(
     player_query: Query<(&PlayerVariant, &Score, &Lives), With<Player>>,
-    time: Res<Time>,
+    // time: Res<Time>,
     mut query: Query<(&mut Text, &PlayerVariant), With<ColorText>>,
 ) {
     for (mut text, score_player_variant) in &mut query.iter_mut() {
-        let seconds = time.elapsed_seconds();
+        // let seconds = time.elapsed_seconds();
 
         // Update the color of the first and only section.
-        text.sections[0].style.color = Color::Rgba {
-            red: (1.25 * seconds).sin() / 2.0 + 0.5,
-            green: (0.75 * seconds).sin() / 2.0 + 0.5,
-            blue: (0.50 * seconds).sin() / 2.0 + 0.5,
-            alpha: 1.0,
-        };
+        // text.sections[0].style.color = Color::Rgba {
+        //     red: (1.25 * seconds).sin() / 2.0 + 0.5,
+        //     green: (0.75 * seconds).sin() / 2.0 + 0.5,
+        //     blue: (0.50 * seconds).sin() / 2.0 + 0.5,
+        //     alpha: 1.0,
+        // };
 
         for (player_variant, player_score, player_lives) in player_query.iter() {
             if player_variant == score_player_variant {

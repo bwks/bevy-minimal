@@ -9,12 +9,8 @@ use crate::ui::styles::{
 };
 use crate::ui::utils::get_title_text_style;
 
-pub fn main_menu_spawn_system(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    game_state: Res<State<GameState>>,
-) {
-    let _main_menu_entity = build_main_menu(&mut commands, &asset_server, &game_state);
+pub fn main_menu_spawn_system(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let _main_menu_entity = build_main_menu(&mut commands, &asset_server);
 }
 
 pub fn main_menu_despawn_system(
@@ -26,11 +22,7 @@ pub fn main_menu_despawn_system(
     }
 }
 
-pub fn build_main_menu(
-    commands: &mut Commands,
-    asset_server: &Res<AssetServer>,
-    game_state: &Res<State<GameState>>,
-) -> Entity {
+pub fn build_main_menu(commands: &mut Commands, asset_server: &Res<AssetServer>) -> Entity {
     let main_menu_entity = commands
         .spawn((
             NodeBundle {
@@ -87,11 +79,7 @@ pub fn build_main_menu(
                     parent.spawn(TextBundle {
                         text: Text {
                             sections: vec![TextSection::new(
-                                if game_state.0 != GameState::GameOver {
-                                    "Play"
-                                } else {
-                                    "Replay"
-                                },
+                                "Play",
                                 TextStyle {
                                     font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                                     font_size: 32.0,
