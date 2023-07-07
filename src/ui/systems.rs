@@ -1,11 +1,11 @@
 use bevy::app::AppExit;
 use bevy::prelude::*;
 
-use crate::game::states::{AppState, GameState};
-use crate::ui::components::{MainMenu, PlayButton, QuitButton, HUD};
+use crate::game::states::AppState;
+use crate::ui::components::{MainMenu, PlayButton, QuitButton};
 use crate::ui::styles::{
-    BUTTON_STYLE, HOVERED_BUTTON_COLOR, IMAGE_STYLE, MAIN_MENU_STYLE, NORMAL_BUTTON_COLOR,
-    PRESSED_BUTTON_COLOR, TITLE_STYLE,
+    BUTTON_STYLE, HOVERED_BUTTON_COLOR, MAIN_MENU_STYLE, NORMAL_BUTTON_COLOR, PRESSED_BUTTON_COLOR,
+    TITLE_STYLE,
 };
 use crate::ui::utils::get_title_text_style;
 
@@ -32,46 +32,6 @@ pub fn build_main_menu(commands: &mut Commands, asset_server: &Res<AssetServer>)
             MainMenu,
         ))
         .with_children(|parent| {
-            // === HUD ===
-            parent
-                .spawn(NodeBundle {
-                    background_color: Color::RED.into(),
-                    style: Style {
-                        flex_direction: FlexDirection::Row,
-                        justify_content: JustifyContent::Start,
-                        align_items: AlignItems::Start,
-                        size: Size::new(Val::Px(300.0), Val::Px(120.0)),
-                        ..Style::DEFAULT
-                    },
-                    ..default()
-                })
-                .with_children(|parent| {
-                    // Image 1
-                    // parent.spawn(ImageBundle {
-                    //     style: IMAGE_STYLE,
-                    //     image: asset_server.load("zombie.png").into(),
-                    //     ..default()
-                    // });
-                    // Text
-                    parent.spawn(TextBundle {
-                        text: Text {
-                            sections: vec![TextSection::new(
-                                "PLAYER 1",
-                                get_title_text_style(&asset_server),
-                            )],
-                            alignment: TextAlignment::Center,
-                            ..default()
-                        },
-                        ..default()
-                    });
-                    // Image 2
-                    // parent.spawn(ImageBundle {
-                    //     style: IMAGE_STYLE,
-                    //     image: asset_server.load("zombie.png").into(),
-                    //     ..default()
-                    // });
-                });
-
             // === Title ===
             parent
                 .spawn(NodeBundle {
@@ -79,13 +39,6 @@ pub fn build_main_menu(commands: &mut Commands, asset_server: &Res<AssetServer>)
                     ..default()
                 })
                 .with_children(|parent| {
-                    // Image 1
-                    // parent.spawn(ImageBundle {
-                    //     style: IMAGE_STYLE,
-                    //     image: asset_server.load("zombie.png").into(),
-                    //     ..default()
-                    // });
-                    // Text
                     parent.spawn(TextBundle {
                         text: Text {
                             sections: vec![TextSection::new(
@@ -97,12 +50,6 @@ pub fn build_main_menu(commands: &mut Commands, asset_server: &Res<AssetServer>)
                         },
                         ..default()
                     });
-                    // Image 2
-                    // parent.spawn(ImageBundle {
-                    //     style: IMAGE_STYLE,
-                    //     image: asset_server.load("zombie.png").into(),
-                    //     ..default()
-                    // });
                 });
 
             // Play
@@ -211,122 +158,4 @@ pub fn interact_with_quit_button_system(
             }
         }
     }
-}
-
-// HUD
-pub fn hud_spawn(
-    mut commands: Commands,
-    _asset_server: Res<AssetServer>,
-    _game_state: Res<State<GameState>>,
-) {
-    commands.spawn((
-        NodeBundle {
-            background_color: Color::RED.into(),
-            style: Style {
-                // flex_direction: FlexDirection::Column,
-                // justify_content: JustifyContent::Center,
-                // align_items: AlignItems::Center,
-                size: Size::new(Val::Percent(100.0), Val::Percent(10.0)),
-                // gap: Size::new(Val::Px(8.0), Val::Px(8.0)),
-                ..Style::DEFAULT
-            },
-            ..Default::default()
-        },
-        HUD,
-    ));
-    // .with_children(|parent| {
-    //     // === Title ===
-    //     parent
-    //         .spawn(NodeBundle {
-    //             style: TITLE_STYLE,
-    //             ..default()
-    //         })
-    //         .with_children(|parent| {
-    //             // Image 1
-    //             // parent.spawn(ImageBundle {
-    //             //     style: IMAGE_STYLE,
-    //             //     image: asset_server.load("zombie.png").into(),
-    //             //     ..default()
-    //             // });
-    //             // Text
-    //             parent.spawn(TextBundle {
-    //                 text: Text {
-    //                     sections: vec![TextSection::new(
-    //                         "Monster Apocalypse",
-    //                         get_title_text_style(&asset_server),
-    //                     )],
-    //                     alignment: TextAlignment::Center,
-    //                     ..default()
-    //                 },
-    //                 ..default()
-    //             });
-    //             // Image 2
-    //             // parent.spawn(ImageBundle {
-    //             //     style: IMAGE_STYLE,
-    //             //     image: asset_server.load("zombie.png").into(),
-    //             //     ..default()
-    //             // });
-    //         });
-
-    //     // Play
-    //     parent
-    //         .spawn((
-    //             ButtonBundle {
-    //                 style: BUTTON_STYLE,
-    //                 background_color: NORMAL_BUTTON_COLOR.into(),
-    //                 ..Default::default()
-    //             },
-    //             PlayButton,
-    //         ))
-    //         .with_children(|parent| {
-    //             parent.spawn(TextBundle {
-    //                 text: Text {
-    //                     sections: vec![TextSection::new(
-    //                         if game_state.0 != GameState::GameOver {
-    //                             "Play"
-    //                         } else {
-    //                             "Replay"
-    //                         },
-    //                         TextStyle {
-    //                             font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-    //                             font_size: 32.0,
-    //                             color: Color::WHITE,
-    //                             ..Default::default()
-    //                         },
-    //                     )],
-    //                     alignment: TextAlignment::Center,
-    //                     ..Default::default()
-    //                 },
-    //                 ..Default::default()
-    //             });
-    //         });
-    //     // Quit
-    //     parent
-    //         .spawn((
-    //             ButtonBundle {
-    //                 style: BUTTON_STYLE,
-    //                 background_color: NORMAL_BUTTON_COLOR.into(),
-    //                 ..Default::default()
-    //             },
-    //             QuitButton,
-    //         ))
-    //         .with_children(|parent| {
-    //             parent.spawn(TextBundle {
-    //                 text: Text {
-    //                     sections: vec![TextSection::new(
-    //                         "Quit",
-    //                         TextStyle {
-    //                             font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-    //                             font_size: 32.0,
-    //                             color: Color::WHITE,
-    //                             ..Default::default()
-    //                         },
-    //                     )],
-    //                     alignment: TextAlignment::Center,
-    //                     ..Default::default()
-    //                 },
-    //                 ..Default::default()
-    //             });
-    //         });
-    // });
 }

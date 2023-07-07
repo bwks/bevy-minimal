@@ -16,8 +16,25 @@ use crate::player::systems::{
     player_respawn_system, player_spawn_system,
 };
 
+pub const PLAYER1_STATIC_SPRITE: SpriteSheet = SpriteSheet {
+    file: "player1-static.png",
+    width: 32.0,
+    height: 32.0,
+    scale: 1.0,
+    columns: 1,
+    rows: 1,
+};
+
+pub const PLAYER2_STATIC_SPRITE: SpriteSheet = SpriteSheet {
+    file: "player2-static.png",
+    width: 32.0,
+    height: 32.0,
+    scale: 1.0,
+    columns: 1,
+    rows: 1,
+};
+
 pub const PLAYER1_SPRITE: SpriteSheet = SpriteSheet {
-    // file: "player1.png",
     file: "player1.png",
     width: 32.0,
     height: 32.0,
@@ -27,7 +44,6 @@ pub const PLAYER1_SPRITE: SpriteSheet = SpriteSheet {
 };
 
 pub const PLAYER2_SPRITE: SpriteSheet = SpriteSheet {
-    // file: "player2.png",
     file: "player2.png",
     width: 32.0,
     height: 32.0,

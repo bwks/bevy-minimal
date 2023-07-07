@@ -1,19 +1,18 @@
-use std::collections::HashSet;
-
 use bevy::app::AppExit;
-use bevy::diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::ActionState;
 
 use crate::common::components::Vitality;
 use crate::common::resources::GameTextures;
 use crate::enemy::components::Enemy;
-use crate::game::components::{ColorText, FpsText};
+use crate::game::components::ColorText;
 use crate::game::states::{AppState, GameState};
 use crate::player::actions::ControlAction;
 use crate::player::components::{Lives, Player, PlayerVariant, Score};
 
-pub fn spawn_camera_system(mut commands: Commands) {
+use super::components::UiPlayerLives;
+
+pub fn camera_spawn_system(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 }
 
@@ -95,10 +94,10 @@ pub fn restart_game_system(
     let mut restart_game = false;
     for (
         _player_variant,
-        mut _player_vitality,
-        mut _player_lives,
-        mut _player_score,
-        mut _player_sprite,
+        _player_vitality,
+        _player_lives,
+        _player_score,
+        _player_sprite,
         controller_input,
     ) in player_query.iter()
     {
@@ -140,30 +139,127 @@ pub fn restart_game_system(
     }
 }
 
-pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn player_lives_spawn_system(
+    mut commands: Commands,
+    game_textures: Res<GameTextures>,
+    player_query: Query<(&Lives, &PlayerVariant), With<Player>>,
+    ui_player_lives: Query<&PlayerVariant, With<UiPlayerLives>>,
+) {
+    let mut player1_ui_lives = 0;
+    let mut player2_ui_lives = 0;
+
+    for player_variant in ui_player_lives.iter() {
+        match &player_variant {
+            PlayerVariant::One => player1_ui_lives += 1,
+            PlayerVariant::Two => player2_ui_lives += 1,
+        }
+    }
+
+    for (player_lives, player_variant) in player_query.iter() {
+        let (player_ui_lives, player_ui_sprite) = match &player_variant {
+            PlayerVariant::One => (player1_ui_lives, game_textures.player_one_static.clone()),
+            PlayerVariant::Two => (player2_ui_lives, game_textures.player_two_static.clone()),
+        };
+
+        if player_ui_lives < player_lives.count {
+            let mut count = 0.0;
+            for _ in 0..player_lives.count {
+                let position = match &player_variant {
+                    PlayerVariant::One => UiRect {
+                        top: Val::Px(0.0),
+                        left: Val::Px(count),
+                        ..default()
+                    },
+                    PlayerVariant::Two => UiRect {
+                        top: Val::Px(0.0),
+                        right: Val::Px(count),
+                        ..default()
+                    },
+                };
+                commands.spawn((
+                    ImageBundle {
+                        style: Style {
+                            position_type: PositionType::Absolute,
+                            size: Size::new(Val::Px(48.0), Val::Px(48.0)),
+                            margin: UiRect {
+                                left: Val::Px(2.0),
+                                right: Val::Px(2.0),
+                                top: Val::Px(65.0),
+                                bottom: Val::Px(8.0),
+                            },
+                            position: position,
+                            ..Style::DEFAULT
+                        },
+                        image: player_ui_sprite.clone().into(),
+                        ..default()
+                    },
+                    UiPlayerLives,
+                    player_variant.clone(),
+                ));
+                count += 40.0;
+            }
+        }
+    }
+}
+
+pub fn player_lives_despawn_system(
+    mut commands: Commands,
+    player_query: Query<(&Lives, &PlayerVariant), With<Player>>,
+    mut ui_player_lives: Query<(Entity, &PlayerVariant), With<UiPlayerLives>>,
+) {
+    let mut player1_ui_lives = 0;
+    let mut player2_ui_lives = 0;
+
+    for (_ui_playery_lives_entity, player_variant) in ui_player_lives.iter() {
+        match &player_variant {
+            PlayerVariant::One => player1_ui_lives += 1,
+            PlayerVariant::Two => player2_ui_lives += 1,
+        }
+    }
+
+    for (player_lives, player_variant) in player_query.iter() {
+        let player_ui_lives = match &player_variant {
+            PlayerVariant::One => player1_ui_lives,
+            PlayerVariant::Two => player2_ui_lives,
+        };
+
+        if player_ui_lives != player_lives.count {
+            for (ui_player_lives_entity, _player_variant) in ui_player_lives.iter_mut() {
+                commands.entity(ui_player_lives_entity).despawn()
+            }
+        }
+    }
+}
+
+pub fn score_spawn_system(mut commands: Commands, asset_server: Res<AssetServer>) {
     // 0
+
     commands.spawn((
-        // Create a TextBundle that has a Text with a single section.
-        TextBundle::from_section(
-            // Accepts a `String` or any type that converts into a `String`, such as `&str`
-            "player1_score",
-            TextStyle {
-                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                font_size: 50.0,
-                color: Color::WHITE,
+        TextBundle {
+            text: Text {
+                sections: vec![TextSection::new(
+                    "Player 1 Score",
+                    TextStyle {
+                        font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                        font_size: 50.0,
+                        color: Color::WHITE,
+                    },
+                )],
+                alignment: TextAlignment::Center,
+                ..default()
             },
-        ) // Set the alignment of the Text
-        .with_text_alignment(TextAlignment::Center)
-        // Set the style of the TextBundle itself.
-        .with_style(Style {
-            position_type: PositionType::Absolute,
-            position: UiRect {
-                top: Val::Px(15.0),
-                left: Val::Px(15.0),
+            style: Style {
+                position_type: PositionType::Absolute,
+                margin: UiRect::new(Val::Px(20.0), Val::Px(20.0), Val::Px(10.0), Val::Px(10.0)),
+                position: UiRect {
+                    top: Val::Px(0.0),
+                    left: Val::Px(0.0),
+                    ..default()
+                },
                 ..default()
             },
             ..default()
-        }),
+        },
         ColorText,
         PlayerVariant::One,
     ));
@@ -194,80 +290,16 @@ pub fn text_setup_system(mut commands: Commands, asset_server: Res<AssetServer>)
         ColorText,
         PlayerVariant::Two,
     ));
-
-    // Text with multiple sections
-    // commands.spawn((
-    //     // Create a TextBundle that has a Text with a list of sections.
-    //     TextBundle::from_sections([
-    //         TextSection::new(
-    //             "FPS: ",
-    //             TextStyle {
-    //                 font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-    //                 font_size: 30.0,
-    //                 color: Color::WHITE,
-    //             },
-    //         ),
-    //         TextSection::from_style(TextStyle {
-    //             font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-    //             font_size: 30.0,
-    //             color: Color::GOLD,
-    //         }),
-    //     ])
-    //     .with_style(Style {
-    //         position_type: PositionType::Absolute,
-    //         position: UiRect {
-    //             top: Val::Px(220.0),
-    //             left: Val::Px(15.0),
-    //             ..default()
-    //         },
-    //         ..default()
-    //     }),
-    //     FpsText,
-    // ));
 }
 
-pub fn text_color_system(
-    player_query: Query<(&PlayerVariant, &Score, &Lives), With<Player>>,
-    // time: Res<Time>,
+pub fn score_update_system(
+    player_query: Query<(&PlayerVariant, &Score), With<Player>>,
     mut query: Query<(&mut Text, &PlayerVariant), With<ColorText>>,
 ) {
     for (mut text, score_player_variant) in &mut query.iter_mut() {
-        // let seconds = time.elapsed_seconds();
-
-        // Update the color of the first and only section.
-        // text.sections[0].style.color = Color::Rgba {
-        //     red: (1.25 * seconds).sin() / 2.0 + 0.5,
-        //     green: (0.75 * seconds).sin() / 2.0 + 0.5,
-        //     blue: (0.50 * seconds).sin() / 2.0 + 0.5,
-        //     alpha: 1.0,
-        // };
-
-        for (player_variant, player_score, player_lives) in player_query.iter() {
+        for (player_variant, player_score) in player_query.iter() {
             if player_variant == score_player_variant {
-                let lives = match player_lives.count {
-                    3 => "* * *",
-                    2 => "* *",
-                    1 => "*",
-                    _ => "",
-                };
-                text.sections[0].value = format!(
-                    "Player {}\n {}\n {}",
-                    player_variant, player_score.value, lives
-                );
-            }
-        }
-    }
-}
-
-pub fn text_update_system(
-    diagnostics: Res<Diagnostics>,
-    mut query: Query<&mut Text, With<FpsText>>,
-) {
-    for mut text in &mut query {
-        if let Some(fps) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
-            if let Some(value) = fps.smoothed() {
-                // Update the value of the second section
-                text.sections[1].value = format!("{value:.2}");
+                text.sections[0].value = format!("{}", player_score.value);
             }
         }
     }

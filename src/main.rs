@@ -27,7 +27,8 @@ use enemy::{
 use game::GamePlugin;
 use player::{
     PlayerPlugin, BULLET_SPRITE, PLAYER1_DEAD_SPRITE, PLAYER1_GHOST_SPRITE, PLAYER1_SPRITE,
-    PLAYER2_GHOST_SPRITE, PLAYER2_SPRITE, PLAYER_DIAMOND_SPRITE,
+    PLAYER1_STATIC_SPRITE, PLAYER2_GHOST_SPRITE, PLAYER2_SPRITE, PLAYER2_STATIC_SPRITE,
+    PLAYER_DIAMOND_SPRITE,
 };
 
 use item::ItemPlugin;
@@ -90,6 +91,8 @@ pub fn setup_system(
         player_two_dead: player1_dead_texture_handle.clone(),
         player_one_ghost: player1_ghost_texture_handle,
         player_two_ghost: player2_ghost_texture_handle,
+        player_one_static: asset_server.load(PLAYER1_STATIC_SPRITE.file),
+        player_two_static: asset_server.load(PLAYER2_STATIC_SPRITE.file),
         player_diamond: player_diamond_texture_handle,
         enemy_zombie: enemy_zombie_texture_handle,
         enemy_zombie_dead: enemy_zombie_dead_texture_handle,
@@ -136,12 +139,5 @@ fn main() {
         .add_plugin(EnemyPlugin)
         .add_plugin(ItemPlugin)
         .add_startup_system(setup_system)
-        // .add_system(start_background_audio.on_startup())
         .run();
 }
-
-// fn start_background_audio(asset_server: Res<AssetServer>, audio: Res<Audio>) {
-//     audio
-//         .play(asset_server.load("diamond-powerup.ogg"))
-//         .looped();
-// }
